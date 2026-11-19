@@ -1,7 +1,7 @@
 """What this server looks like: memory, disk, Docker, and where n8n runs.
 
-Read-only helpers shared by preflight.py, new_env.py, n8n/import_to_n8n.py and send_test.py. Nothing here
-changes the server. The parsing functions take text, so they can be checked without a server.
+Read-only helpers shared by deploy.py, preflight.py, new_env.py, n8n/import_to_n8n.py and send_test.py.
+Nothing here changes the server. The parsing functions take text, so they can be checked without a server.
 """
 import ipaddress
 import json
@@ -15,6 +15,7 @@ from pathlib import Path
 
 N8N_PORT = 5678
 GIB = 1024 ** 3
+PROJECT = "udap"  # the `name:` of docker-compose.yml
 
 
 @dataclass(frozen=True)
@@ -26,7 +27,12 @@ class Container:
 
 @dataclass(frozen=True)
 class N8n:
-    """Where n8n runs on this server. kind is 'docker' (container holds its name) or 'host'."""
+    """n8n on this server.
+
+    kind            'docker' (container holds its name), 'host' (a program on the server), or 'unknown' when Docker
+                    could not be asked.
+    loopback_only   it answers on 127.0.0.1 but not on the server's own address, so a container cannot call it.
+    """
     kind: str
     container: str | None
     host_port: int
@@ -41,8 +47,31 @@ def run(cmd: list[str], timeout: float = 20.0, stdin: bytes | None = None) -> tu
         return 127, f"{cmd[0]}: not installed"
     except subprocess.TimeoutExpired:
         return 124, f"{' '.join(cmd[:3])}: no answer within {timeout:.0f} s"
+    except OSError as error:
+        return 126, f"{cmd[0]}: {error}"
     text = (done.stdout + done.stderr).decode("utf-8", "replace").strip()
     return done.returncode, text
+
+
+_docker: list[str] | None = None
+
+
+def docker() -> list[str]:
+    """The command that reaches Docker here: `docker`, or `sudo -n docker` when this user may not use Docker
+    directly but may use sudo without a password (the usual state of a fresh cloud server). Decided once."""
+    global _docker  # noqa: PLW0603 - one answer per run
+    if _docker is None:
+        _docker = ["docker"]
+        code, out = run(["docker", "info", "--format", "{{.ServerVersion}}"])
+        if code not in (0, 127) and "permission denied" in out.lower():
+            sudo_code, _ = run(["sudo", "-n", "docker", "info", "--format", "{{.ServerVersion}}"])
+            if sudo_code == 0:
+                _docker = ["sudo", "-n", "docker"]
+    return _docker
+
+
+def uses_sudo() -> bool:
+    return docker()[0] == "sudo"
 
 
 def parse_meminfo(text: str) -> dict[str, int]:
@@ -124,27 +153,46 @@ def n8n_from_containers(containers: list[Container], port: int = N8N_PORT) -> N8
     return None
 
 
-def find_n8n(docker: str = "docker") -> tuple[N8n | None, str]:
-    """n8n on this server, and a sentence saying how it was found."""
-    code, out = run([docker, "ps", "--format", "{{.Names}}\t{{.Image}}\t{{.Ports}}"])
-    if code not in (0, 127):
-        # Docker is installed but did not answer (usually: this user may not use it). Do not guess from the open
-        # port: a container's published port looks the same as a program on the server.
-        reason = out.splitlines()[-1] if out else "no output"
-        return None, f"Docker did not answer, so n8n could not be looked for ({reason})"
-    listening = port_open("127.0.0.1", N8N_PORT)
+def find_n8n() -> tuple[N8n | None, str]:
+    """n8n on this server, and a sentence saying how it was found.
+
+    What decides whether the platform can use it is one test: does n8n answer on this server's own (private)
+    address? A container reaches n8n there whether n8n is a container with a published port or a program.
+    Docker is asked only for the container's name, which the import needs.
+    """
+    code, out = run([*docker(), "ps", "--format", "{{.Names}}\t{{.Image}}\t{{.Ports}}"])
+    container, port = None, N8N_PORT
     if code == 0:
         containers = parse_docker_ps(out)
-        found = n8n_from_containers(containers)
-        if found:
-            return found, f"n8n runs in the Docker container '{found.container}' (port {found.host_port})"
-        on_host_network = [c for c in containers if "n8n" in c.image.lower() and "->" not in c.ports]
-        if listening and len(on_host_network) == 1:  # started with --network host: no port mapping to read
-            name = on_host_network[0].name
-            return N8n("docker", name, N8N_PORT, False), f"n8n runs in the Docker container '{name}' (host network)"
-    if listening:
-        return N8n("host", None, N8N_PORT, False), f"n8n runs directly on this server (port {N8N_PORT}, no container)"
-    return None, f"n8n was not found on this server (no container publishes port {N8N_PORT}, and nothing listens on it)"
+        published = n8n_from_containers(containers)
+        if published:
+            container, port = published.container, published.host_port
+        else:  # started with --network host: there is no port mapping to read
+            on_host_network = [c for c in containers if "n8n" in c.image.lower() and "->" not in c.ports]
+            if len(on_host_network) == 1:
+                container = on_host_network[0].name
+    address = private_ip()
+    on_address = bool(address) and port_open(str(address), port)
+    on_loopback = port_open("127.0.0.1", port)
+    if not (on_address or on_loopback):
+        if container:
+            return N8n("docker", container, port, False), (
+                f"n8n's container '{container}' exists, but nothing answers on port {port} yet (is it still starting?)")
+        return None, f"n8n was not found on this server (nothing answers on port {port})"
+    if container:
+        kind, where = "docker", f"in the Docker container '{container}'"
+    elif code in (0, 127):
+        kind, where = "host", "directly on this server, not in a container"
+    else:
+        reason = out.splitlines()[-1] if out else "no output"
+        kind, where = "unknown", f"on this server (Docker did not answer, so its container is not known: {reason})"
+    return N8n(kind, container, port, not on_address), f"n8n runs {where} (port {port})"
+
+
+def platform_running() -> bool:
+    """True when this deployment's own containers are up: then ports 80, 443 and 8000 are in use by the platform."""
+    code, out = run([*docker(), "ps", "--filter", f"label=com.docker.compose.project={PROJECT}", "--format", "{{.Names}}"])
+    return code == 0 and bool(out.strip())
 
 
 def data_mount(inspect_json: str, inside: str = "/home/node/.n8n") -> str | None:

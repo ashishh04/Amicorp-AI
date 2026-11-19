@@ -29,6 +29,23 @@ and those are not built yet. So on this server:
 
 It is the right setup for a demo or a team test server. It is not DEV, NPR or PRD.
 
+## The short version
+
+Push the code from the laptop (step 2), open port 443 in the cloud firewall (step 1), then on the server:
+
+```bash
+git clone <your repository URL> ~/udap        # the first time; later:  git -C ~/udap pull
+cd ~/udap/deploy
+python3 deploy.py --site <the server's public IP, or its DNS name>
+```
+
+`deploy.py` runs steps 3 to 8 below in order. It stops at the first step that fails, says which one and what to
+do, and is safe to run again: a finished step is quick the second time, and nothing that is already set (the
+secrets, the addresses, n8n's workflows) is replaced. `--allow <address>` lets another public address open the
+portal; `--skip-n8n` leaves n8n alone. It ends with `DEPLOYED` and the address to open.
+
+The steps below describe what it does, for when you want to run one by hand.
+
 ## Step 1. The firewall
 
 Set the cloud firewall (in AWS: the instance's security group, **Edit inbound rules**) before you start
@@ -78,7 +95,8 @@ python3 preflight.py
 
 It changes nothing. It reports memory, disk, Docker, the ports and where n8n runs, each line marked OK, NOTE or
 FIX, and ends with `RESULT`. Fix the FIX lines (it prints the commands, for example to add swap on a small
-server or to install Docker), then run it again until it says the server is ready.
+server, or to install Docker or its Compose and buildx plugins), then run it again until it says the server is
+ready. If this user may reach Docker only through `sudo`, the scripts use `sudo` themselves and say so.
 
 The platform needs about 1 GB of memory to run, and about 3 GB of free memory and swap together for the first
 build. If a NOTE says n8n keeps its data inside its container, never remove that container; nothing in these
@@ -90,13 +108,15 @@ steps does.
 python3 new_env.py --site <the server's public IP, or its DNS name>
 ```
 
-It writes `.env`: a new database password, four new tokens, and the addresses. It finds n8n on this server and
-uses the server's private address for both directions, and it allows the address you are connected from to
-open the portal. It prints what it chose. `--allow 203.0.113.7/32` allows another address (repeat it for more).
+It creates `.env`: a new database password, four new tokens, and the addresses. If n8n answers on this server's
+own (private) address, it uses that address for both directions, and it allows the address you are connected
+from to open the portal. It prints what it chose. `--allow 203.0.113.7/32` allows another address (repeat it for
+more). Running it again completes the same file: a secret or an n8n address that is already set is never
+replaced, and only `SITE_ADDRESS` follows `--site`.
 
 With a DNS name the gateway fetches a public certificate. With an IP address it signs its own, and the browser
-warns once. If the public IP changes (an AWS instance without an Elastic IP gets a new one after a stop), set
-the new one as `SITE_ADDRESS` in `.env` and run `docker compose up -d`.
+warns once. If the public IP changes (an AWS instance without an Elastic IP gets a new one after a stop), run
+`python3 deploy.py --site <the new address>`; n8n's side uses the private address and is not affected.
 
 **n8n on another server:** give both addresses yourself (`API_BIND=0.0.0.0` is set for you):
 
@@ -111,8 +131,7 @@ For reference, what the script writes:
 
 | Where n8n runs | `PLATFORM_API_URL` | `N8N_WEBHOOK_BASE` | `API_BIND` |
 |---|---|---|---|
-| On this server, in Docker | `http://<this server's private IP>:8000` | `http://<this server's private IP>:5678` | `0.0.0.0` |
-| On this server, without Docker | `http://127.0.0.1:8000` | `http://<this server's private IP>:5678` | `127.0.0.1` |
+| On this server (in Docker or not) | `http://<this server's private IP>:8000` | `http://<this server's private IP>:5678` | `0.0.0.0` |
 | On another server | `http://<this server's private IP>:8000` | `http://<n8n server's private IP>:5678` | `0.0.0.0` |
 
 ## Step 5. Start
@@ -252,8 +271,10 @@ the n8n server: the build, the migrations and the seed; the portal and the sign-
 an IP address, the redirect from HTTP and the tunnel address; the live event stream; the import and publishing
 of the seven workflows; and a bank statement from the n8n webhook to its card.
 
-Added later that day and checked without a server: `preflight.py`, `new_env.py --site`, `n8n/import_to_n8n.py`
-(against a simulated Docker) and `send_test.py` (against a simulated n8n and API). The workflow copies with the
+Added later that day and checked without a server: `deploy.py` (the order of its steps and where it stops),
+`preflight.py`, `new_env.py`, `n8n/import_to_n8n.py` (against simulated servers, among them one where Docker needs
+`sudo` and one with a half-filled `.env`) and `send_test.py` (against a simulated n8n and API). `preflight.py` and
+`new_env.py` also ran on a real Ubuntu 26.04 without Docker. The workflow copies with the
 values written in were imported into n8n 2.22.6, and one of them (the sweeper, started by hand) was run there
 against a stand-in API: n8n called the written-in address with the imported credential and the written-in
 limits. The other six copies have the same structure as the ones that ran end to end earlier.

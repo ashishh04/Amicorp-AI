@@ -1,13 +1,16 @@
-"""Create deploy/.env from deploy/.env.example: a fresh value for every secret, and the addresses.
+"""Create or complete deploy/.env: a value for every secret, and the addresses.
 
-    python3 new_env.py --site 18.232.76.13       the address people will open (a DNS name, or the public IP)
+    python3 new_env.py --site 203.0.113.10       the address people will open (a DNS name, or the public IP)
     python3 new_env.py                           secrets only; set the addresses in .env by hand afterwards
 
-With --site it also fills in the addresses when n8n runs on this server: it looks for n8n (a container that
-publishes port 5678, or a process listening on it) and uses this server's private address for both directions.
---allow adds public addresses that may open the portal; without it, the address you are connected from is used.
+The first run copies .env.example and fills it in. A later run completes the same file and is safe to repeat:
+it never replaces a secret or an n8n address that is already set, because the database and n8n use them.
+Only SITE_ADDRESS follows --site, so a changed public IP is one command.
 
-It never overwrites an existing .env: that file's tokens are already in the database and in n8n.
+With n8n on this server it fills in the addresses itself: if n8n answers on this server's own (private)
+address, the Platform API's container can call it there, and n8n can call the API on the same address.
+--allow adds public addresses that may open the portal; if none is set, the address you are connected from is used.
+deploy.py runs this for you.
 """
 import argparse
 import os
@@ -21,6 +24,8 @@ HERE = Path(__file__).resolve().parent
 EXAMPLE = HERE / ".env.example"
 TARGET = HERE / ".env"
 API_PORT = 8000
+ADDRESSES = ("SITE_ADDRESS", "ALLOWED_IPS", "PLATFORM_API_URL", "N8N_WEBHOOK_BASE", "API_BIND")
+REQUIRED = ("SITE_ADDRESS", "PLATFORM_API_URL", "N8N_WEBHOOK_BASE")
 
 # The password goes inside a database URL, so it is letters and digits only.
 GENERATORS = {
@@ -33,23 +38,86 @@ GENERATORS = {
 
 
 def n8n_addresses(n8n: si.N8n | None, private: str | None) -> tuple[dict[str, str], str | None]:
-    """PLATFORM_API_URL, N8N_WEBHOOK_BASE and API_BIND for an n8n on this server, or a reason why not."""
+    """PLATFORM_API_URL, N8N_WEBHOOK_BASE and API_BIND for an n8n on this server, or the reason why not.
+    The same three values serve an n8n in a container and an n8n that runs as a program."""
     if n8n is None:
         return {}, "n8n was not found on this server"
     if private is None:
         return {}, "this server's private address could not be found"
-    if n8n.kind == "docker" and n8n.loopback_only:
-        return {}, "n8n's port is published on 127.0.0.1 only, so the API's container cannot reach it"
-    base = f"http://{private}:{n8n.host_port}"
-    if n8n.kind == "docker":
-        # Both run in containers: each reaches the other through the server's own address.
-        return {"PLATFORM_API_URL": f"http://{private}:{API_PORT}", "N8N_WEBHOOK_BASE": base,
-                "API_BIND": "0.0.0.0"}, None  # noqa: S104 - the security group keeps port 8000 closed
-    return {"PLATFORM_API_URL": f"http://127.0.0.1:{API_PORT}", "N8N_WEBHOOK_BASE": base, "API_BIND": "127.0.0.1"}, None
+    if n8n.loopback_only:
+        return {}, "n8n answers on 127.0.0.1 only, so the API's container cannot reach it"
+    return {"PLATFORM_API_URL": f"http://{private}:{API_PORT}", "N8N_WEBHOOK_BASE": f"http://{private}:{n8n.host_port}",
+            "API_BIND": "0.0.0.0"}, None  # noqa: S104 - the cloud firewall keeps port 8000 closed to the outside
+
+
+def complete(site: str | None = None, allow: list[str] | None = None, n8n_url: str | None = None,
+             api_url: str | None = None) -> tuple[list[str], list[str]]:
+    """Create .env, or complete the one that exists. Returns (what it did, what is still missing)."""
+    created = not TARGET.exists()
+    lines = (EXAMPLE if created else TARGET).read_text(encoding="utf-8").splitlines()
+    current = {} if created else si.read_env(TARGET)
+    want: dict[str, str] = {}
+    report: list[str] = [f"{'Created' if created else 'Completed'} {TARGET}"]
+
+    new_secrets = [name for name in GENERATORS if not current.get(name)]
+    want.update({name: GENERATORS[name]() for name in new_secrets})
+    report.append(f"secrets: {len(new_secrets)} new, {len(GENERATORS) - len(new_secrets)} kept")
+
+    if site:
+        want["SITE_ADDRESS"] = site.strip().removeprefix("https://").removeprefix("http://").rstrip("/")
+
+    allowed = current.get("ALLOWED_IPS", "").split()
+    before = list(allowed)
+    allowed += [a for a in (allow or []) if a not in allowed]
+    if not allowed:
+        client = si.ssh_client_ip()
+        if client:
+            allowed = [f"{client}/32"]
+            report.append(f"allowed the address you are connected from ({client}) to open the portal")
+    if allowed != before:
+        want["ALLOWED_IPS"] = " ".join(allowed)
+
+    if n8n_url or api_url:
+        if not (n8n_url and api_url):
+            sys.exit("Give --n8n-url and --api-url together.")
+        want.update({"N8N_WEBHOOK_BASE": n8n_url.rstrip("/"), "PLATFORM_API_URL": api_url.rstrip("/"),
+                     "API_BIND": "0.0.0.0"})  # noqa: S104 - n8n calls from another server
+        report.append("n8n is on another server (the addresses you gave)")
+    elif not (current.get("PLATFORM_API_URL") and current.get("N8N_WEBHOOK_BASE")):
+        n8n, how = si.find_n8n()
+        found, problem = n8n_addresses(n8n, si.private_ip())
+        want.update(found)
+        report.append(how if n8n is not None else f"{how}")
+        if problem and n8n is not None:
+            report.append(f"but {problem}")
+
+    names_in_file = set()
+    result = []
+    for line in lines:
+        name = line.split("=", 1)[0].strip()
+        if "=" in line and not line.lstrip().startswith("#"):
+            names_in_file.add(name)
+            if name in want:
+                line = f"{name}={want[name]}"
+        result.append(line)
+    for name in want:
+        if name not in names_in_file:  # an .env made from an older .env.example
+            result.append(f"{name}={want[name]}")
+    if created:
+        TARGET.touch(mode=0o600)
+    TARGET.write_text("\n".join(result) + "\n", encoding="utf-8")
+    if os.name == "posix":
+        TARGET.chmod(0o600)
+
+    final = si.read_env(TARGET)
+    for name in ADDRESSES:
+        report.append(f"  {name:<17} {final.get(name, '') or '(empty)'}")
+    missing = [name for name in REQUIRED if not final.get(name)]
+    return report, missing
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Create deploy/.env with new secrets and the addresses.")
+    parser = argparse.ArgumentParser(description="Create or complete deploy/.env: secrets and addresses.")
     parser.add_argument("--site", help="the DNS name or public IP address people will open")
     parser.add_argument("--allow", action="append", default=[], metavar="ADDRESS",
                         help="a public address or range that may open the portal (repeat for more)")
@@ -57,68 +125,18 @@ def main() -> None:
     parser.add_argument("--api-url", help="how n8n reaches the Platform API, when n8n is on another server")
     args = parser.parse_args()
 
-    if TARGET.exists():
-        sys.exit(f"{TARGET} already exists. It is not overwritten: its tokens are in use. Edit it by hand.")
-
-    values: dict[str, str] = {name: make() for name, make in GENERATORS.items()}
-    report: list[str] = []
-    todo: list[str] = []
-    if args.site:
-        values["SITE_ADDRESS"] = args.site.strip().removeprefix("https://").removeprefix("http://").rstrip("/")
-        allowed = list(args.allow)
-        if not allowed:
-            client = si.ssh_client_ip()
-            if client:
-                allowed = [f"{client}/32"]
-                report.append(f"{'ALLOWED_IPS':<17} {client}/32  (the address you are connected from)")
-            else:
-                todo.append("ALLOWED_IPS: your own public address could not be seen. The portal will tell you the "
-                            "address to add the first time it refuses you.")
-        values["ALLOWED_IPS"] = " ".join(allowed)
-
-        if args.n8n_url or args.api_url:
-            if not (args.n8n_url and args.api_url):
-                sys.exit("Give --n8n-url and --api-url together.")
-            found = {"N8N_WEBHOOK_BASE": args.n8n_url.rstrip("/"), "PLATFORM_API_URL": args.api_url.rstrip("/"),
-                     "API_BIND": "0.0.0.0"}  # noqa: S104 - n8n calls from another server
-            how = "n8n is on another server (the addresses you gave)"
-        else:
-            n8n, how = si.find_n8n()
-            found, problem = n8n_addresses(n8n, si.private_ip())
-            if problem:
-                todo.append(f"PLATFORM_API_URL, N8N_WEBHOOK_BASE and API_BIND: {how if n8n is None else problem}. Set them "
-                            "by hand (README, step 4), or delete .env and run this again with --n8n-url and --api-url.")
-        values.update(found)
-        if found:
-            report.insert(0, how)
-    else:
-        todo.append("SITE_ADDRESS, ALLOWED_IPS, PLATFORM_API_URL and N8N_WEBHOOK_BASE (README, step 4).")
-
-    lines, written = [], set()
-    for line in EXAMPLE.read_text(encoding="utf-8").splitlines():
-        name = line.split("=", 1)[0].strip()
-        if "=" in line and not line.lstrip().startswith("#") and name in values:
-            line = f"{name}={values[name]}"
-            written.add(name)
-        lines.append(line)
-    missing = sorted(set(values) - written)
-    if missing:
-        sys.exit(f".env.example has no line for: {', '.join(missing)}")
-    TARGET.touch(mode=0o600)
-    TARGET.write_text("\n".join(lines) + "\n", encoding="utf-8")
-    if os.name == "posix":
-        TARGET.chmod(0o600)
-
-    print(f"Wrote {TARGET} with {len(GENERATORS)} new secrets.")
-    for name in ("SITE_ADDRESS", "PLATFORM_API_URL", "N8N_WEBHOOK_BASE", "API_BIND"):
-        if name in values and name not in GENERATORS:
-            report.append(f"{name:<17} {values[name]}")
+    report, missing = complete(args.site, args.allow, args.n8n_url, args.api_url)
     for text in report:
-        print(f"  {text}")
-    if todo:
-        print("Still to set in .env by hand:")
-        for text in todo:
-            print(f"  - {text}")
+        print(text)
+    if missing:
+        print(f"\nStill empty: {', '.join(missing)}.")
+        if "SITE_ADDRESS" in missing:
+            print("  SITE_ADDRESS: run this again with --site <the server's public IP or DNS name>.")
+        if "N8N_WEBHOOK_BASE" in missing or "PLATFORM_API_URL" in missing:
+            print("  The n8n addresses: if n8n is on another server, run this again with\n"
+                  "    --n8n-url http://<n8n server>:5678 --api-url http://<this server>:8000\n"
+                  "  Otherwise paste this output into the chat.")
+        sys.exit(1)
 
 
 if __name__ == "__main__":

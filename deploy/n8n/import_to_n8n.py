@@ -103,30 +103,32 @@ def main() -> None:
     parser.add_argument("--yes", action="store_true", help="do not ask before starting")
     parser.add_argument("--force", action="store_true", help="continue although n8n has workflows with the same names")
     parser.add_argument("--dry-run", action="store_true", help="show the commands without running them")
-    parser.add_argument("--docker", default="docker", help=argparse.SUPPRESS)
     args = parser.parse_args()
-    docker = args.docker
+    docker = si.docker()  # `docker`, or `sudo -n docker` when this user may not use Docker directly
     wanted = expected()
 
     port = si.N8N_PORT
     if args.container:
         container = args.container
-        code, out = si.run([docker, "ps", "--format", "{{.Names}}\t{{.Image}}\t{{.Ports}}"])
+        code, out = si.run([*docker, "ps", "--format", "{{.Names}}\t{{.Image}}\t{{.Ports}}"])
         known = si.n8n_from_containers([c for c in si.parse_docker_ps(out) if c.name == container]) if code == 0 else None
         port = known.host_port if known else port
     else:
-        n8n, how = si.find_n8n(docker)
+        n8n, how = si.find_n8n()
         print(how + ".")
         if n8n is None:
             fail("Give the container's name with --container, or, if n8n is on another server, copy this n8n folder "
-                 "there and run this script on that server.")
+                 "and serverinfo.py there and run this script on that server.")
+        if n8n.kind == "unknown":
+            fail("Docker must answer before the workflows can be loaded:  sudo usermod -aG docker $USER   then log "
+                 "out and in again, and run this again.")
         if n8n.kind != "docker":
             manual_steps()
             sys.exit(2)
         container, port = str(n8n.container), n8n.host_port
 
     def cli(*command: str, user: str | None = None, timeout: float = CLI_TIMEOUT) -> tuple[int, str]:
-        full = [docker, "exec", *(["-u", user] if user else []), container, *command]
+        full = [*docker, "exec", *(["-u", user] if user else []), container, *command]
         if args.dry_run:
             print("  would run:", " ".join(full))
             return 0, ""
@@ -165,9 +167,9 @@ def main() -> None:
             path.chmod(0o755 if path.is_dir() else 0o644)
         cli("rm", "-rf", INSIDE, user="0")
         if args.dry_run:
-            print(f"  would run: {docker} cp {copy} {container}:{Path(INSIDE).parent}/")
+            print(f"  would run: {' '.join(docker)} cp {copy} {container}:{Path(INSIDE).parent}/")
         else:
-            code, out = si.run([docker, "cp", str(copy), f"{container}:{Path(INSIDE).parent}/"], timeout=120)
+            code, out = si.run([*docker, "cp", str(copy), f"{container}:{Path(INSIDE).parent}/"], timeout=120)
             if code != 0:
                 fail("Copying the files into the container failed.", out)
     finally:
@@ -193,18 +195,17 @@ def main() -> None:
 
     print("Restarting n8n ...")
     if args.dry_run:
-        print(f"  would run: {docker} restart {container}")
+        print(f"  would run: {' '.join(docker)} restart {container}")
         print("Dry run finished: nothing was changed.")
         return
-    code, out = si.run([docker, "restart", container], timeout=180)
+    code, out = si.run([*docker, "restart", container], timeout=180)
     if code != 0:
         fail("The container did not restart.", out)
     print(f"Waiting for n8n to register the webhooks (up to {READY_SECONDS // 60} minutes) ...")
     if wait_until_ready(port):
         print("\nDONE: n8n is running, and the workflows answer on their webhook addresses.")
-        print("Next:  python3 send_test.py")
     else:
-        fail(f"n8n did not answer on port {port} in time. Look at its log:  docker logs --tail 60 {container}")
+        fail(f"n8n did not answer on port {port} in time. Look at its log:  {' '.join(docker)} logs --tail 60 {container}")
 
 
 if __name__ == "__main__":

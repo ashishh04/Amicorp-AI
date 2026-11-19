@@ -42,12 +42,17 @@ def stop(message: str) -> None:
 
 
 def main() -> None:
+    if not (HERE / ".env").exists():
+        stop("There is no .env in this folder yet, so nothing has been deployed here. "
+             "Run:  python3 deploy.py --site <the server's public IP>")
     env = si.read_env(HERE / ".env")
     n8n = env.get("N8N_WEBHOOK_BASE", "").rstrip("/")
     token = env.get("N8N_INTAKE_WEBHOOK_TOKEN", "")
     api = f"http://127.0.0.1:{env.get('API_PORT') or 8000}"
     if not n8n or not token:
-        stop("N8N_WEBHOOK_BASE or N8N_INTAKE_WEBHOOK_TOKEN is missing in .env.")
+        empty = " and ".join(name for name, value in (("N8N_WEBHOOK_BASE", n8n), ("N8N_INTAKE_WEBHOOK_TOKEN", token)) if not value)
+        stop(f"{empty} is empty in .env: the settings step did not finish, so the steps after it could not work "
+             "either. Run:  python3 deploy.py --site <the server's public IP>   It completes .env and does the rest.")
 
     now = datetime.now(UTC)
     statement = {"channel": "email", "objectKey": f"raw-docs/uc1/{now:%Y/%m}/hsbc-test-{int(time.time())}.pdf",
