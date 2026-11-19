@@ -111,6 +111,7 @@ services:
     image: udap/portal-web:local
     build:
       context: ../frontend
+      dockerfile: ../deploy/portal.Dockerfile
     restart: unless-stopped
     volumes:
       # Runtime configuration: the real API (no in-browser mock) and the sample-officer sign-in.

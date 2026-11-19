@@ -12,7 +12,7 @@ from pathlib import Path
 
 import serverinfo as si
 
-BUILD_MEMORY = 3.0 * si.GIB   # free memory plus free swap the first build needs (the portal build is the peak)
+BUILD_MEMORY = 4.5 * si.GIB   # free memory plus free swap for the first build: the portal build alone may take 3 GB
 RUN_MEMORY = 1.0 * si.GIB     # what the platform uses once it runs
 BUILD_DISK = 8 * si.GIB       # images, build cache and the database
 SWAP_SIZE_GB = 4
@@ -114,7 +114,7 @@ def main() -> int:
     print("n8n")
     n8n, how = si.find_n8n()
     if n8n is None:
-        line("NOTE", f"{how}. If n8n is on another server, say so in the chat.")
+        line("NOTE", f"{how}. If n8n runs on another server, give its address:  --n8n-url http://<n8n's address>:5678")
     else:
         line("OK", how)
         if n8n.loopback_only:
@@ -133,6 +133,9 @@ def main() -> int:
     print("Addresses")
     address = si.private_ip()
     line("OK" if address else "NOTE", f"private address of this server: {address or 'not found'}")
+    public = si.public_ip()
+    line("OK" if public else "NOTE", f"public address of this server: {public}" if public else
+         "public address of this server: not known here (give it with --site)")
     client = si.ssh_client_ip()
     line("OK" if client else "NOTE",
          f"you are connected from: {client}" if client else

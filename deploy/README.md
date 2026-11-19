@@ -36,13 +36,19 @@ Push the code from the laptop (step 2), open port 443 in the cloud firewall (ste
 ```bash
 git clone <your repository URL> ~/udap        # the first time; later:  git -C ~/udap pull
 cd ~/udap/deploy
-python3 deploy.py --site <the server's public IP, or its DNS name>
+python3 deploy.py                                          # n8n runs on this server
+python3 deploy.py --n8n-url http://<n8n's address>:5678    # n8n runs on another server
 ```
 
 `deploy.py` runs steps 3 to 8 below in order. It stops at the first step that fails, says which one and what to
 do, and is safe to run again: a finished step is quick the second time, and nothing that is already set (the
-secrets, the addresses, n8n's workflows) is replaced. `--allow <address>` lets another public address open the
-portal; `--skip-n8n` leaves n8n alone. It ends with `DEPLOYED` and the address to open.
+secrets, n8n's workflows) is replaced. It asks the cloud for this server's public address; `--site <DNS name>`
+names another address for people to open. `--allow <address>` lets another public address open the portal;
+`--skip-n8n` leaves n8n alone. It ends with `DEPLOYED` and the address to open.
+
+With n8n on another server there are two more things, and the command names both when it reaches them: this
+server's firewall must let the n8n server reach port 8000, and the workflows are loaded on the n8n server with
+two commands that it prints for your laptop.
 
 The steps below describe what it does, for when you want to run one by hand.
 
@@ -105,34 +111,32 @@ steps does.
 ## Step 4. Settings
 
 ```bash
-python3 new_env.py --site <the server's public IP, or its DNS name>
+python3 new_env.py                                          # n8n runs on this server
+python3 new_env.py --n8n-url http://<n8n's address>:5678    # n8n runs on another server
 ```
 
-It creates `.env`: a new database password, four new tokens, and the addresses. If n8n answers on this server's
-own (private) address, it uses that address for both directions, and it allows the address you are connected
-from to open the portal. It prints what it chose. `--allow 203.0.113.7/32` allows another address (repeat it for
-more). Running it again completes the same file: a secret or an n8n address that is already set is never
-replaced, and only `SITE_ADDRESS` follows `--site`.
+It creates `.env`: a new database password, four new tokens, and the addresses. It asks the cloud for this
+server's public address (`--site` names a DNS name instead), and it allows the address you are connected from to
+open the portal. It prints what it chose. `--allow 203.0.113.7/32` allows another address (repeat it for more).
+Running it again completes the same file: a secret or an n8n address that is already set is never replaced,
+unless you give `--site` or `--n8n-url` again.
 
 With a DNS name the gateway fetches a public certificate. With an IP address it signs its own, and the browser
 warns once. If the public IP changes (an AWS instance without an Elastic IP gets a new one after a stop), run
-`python3 deploy.py --site <the new address>`; n8n's side uses the private address and is not affected.
+`python3 deploy.py` again: it corrects the address.
 
-**n8n on another server:** give both addresses yourself (`API_BIND=0.0.0.0` is set for you):
+What the script writes:
 
-```bash
-python3 new_env.py --site <address> --n8n-url http://<n8n server's private IP>:5678 --api-url http://<this server's private IP>:8000
-```
-
-If the two servers share no private network, use `--api-url https://<DNS name>/api` (it needs a DNS name, and the
-n8n server's address in `ALLOWED_IPS`) and n8n's public address for `--n8n-url`.
-
-For reference, what the script writes:
-
-| Where n8n runs | `PLATFORM_API_URL` | `N8N_WEBHOOK_BASE` | `API_BIND` |
+| Where n8n runs | `N8N_WEBHOOK_BASE` | `PLATFORM_API_URL` | `API_BIND` |
 |---|---|---|---|
-| On this server (in Docker or not) | `http://<this server's private IP>:8000` | `http://<this server's private IP>:5678` | `0.0.0.0` |
-| On another server | `http://<this server's private IP>:8000` | `http://<n8n server's private IP>:5678` | `0.0.0.0` |
+| On this server (in Docker or not) | `http://<this server's private IP>:5678` | `http://<this server's private IP>:8000` | `0.0.0.0` |
+| On another server, given by a private address | `--n8n-url` | `http://<this server's private IP>:8000` | `0.0.0.0` |
+| On another server, given by a public address | `--n8n-url` | `http://<this server's public address>:8000` | `0.0.0.0` |
+
+With n8n on another server, the firewalls must allow both directions: port 8000 of this server from the n8n
+server, and n8n's port from this server. Use the private addresses when both servers are in the same network:
+they do not change when a server is stopped, and the tokens do not cross the Internet. With public addresses on
+plain HTTP they do, which is acceptable for synthetic data only.
 
 ## Step 5. Start
 
@@ -175,13 +179,16 @@ n8n). It never removes the container. It ends with `DONE` when the webhooks answ
 It stops, without changing anything, if n8n already has workflows with the same names under other IDs: two
 copies would answer the same webhook address. Unpublish or delete those in the n8n editor, then run it again.
 
-**n8n on another server:** copy the folder and run the script there.
+**n8n on another server:** `deploy.py` puts the script, its helper and the copies into `n8n-transfer/` and prints
+two commands for your laptop, which can reach both servers. The first copies that folder from this server to
+the n8n server; the second runs the import there and removes the folder:
 
-```bash
-ssh <user>@<n8n server> mkdir -p udap-n8n
-scp -r n8n serverinfo.py <user>@<n8n server>:udap-n8n/
-ssh <user>@<n8n server> python3 udap-n8n/n8n/import_to_n8n.py --yes
+```powershell
+scp -3 -r -i <your-key.pem> ubuntu@<this server>:udap/deploy/n8n-transfer ubuntu@<n8n server>:udap-n8n
+ssh -i <your-key.pem> ubuntu@<n8n server> "python3 udap-n8n/import_to_n8n.py --yes && rm -rf udap-n8n"
 ```
+
+Then press Enter in `deploy.py`: it checks that n8n has the workflows with the current credentials and goes on.
 
 **n8n without Docker, or if you prefer to type it:** these are the commands the script runs (in a container,
 each one after `docker exec <n8n>`; the files must first be copied into the container with `docker cp`).
@@ -278,6 +285,11 @@ Added later that day and checked without a server: `deploy.py` (the order of its
 values written in were imported into n8n 2.22.6, and one of them (the sweeper, started by hand) was run there
 against a stand-in API: n8n called the written-in address with the imported credential and the written-in
 limits. The other six copies have the same structure as the ones that ran end to end earlier.
+
+The path with n8n on another server (the settings, the folder for the n8n server, the two printed commands, the
+check that n8n has the current credentials) was checked the same way: against simulated servers and on that
+Ubuntu, not between two real servers. `portal.Dockerfile` is `frontend/Dockerfile` plus one line that enlarges
+Node's memory limit; it has not been built since that line was added.
 
 Not checked anywhere yet: a public certificate for a DNS name, the allow-list against a real outside address,
 n8n in a container (`docker cp` and `docker exec`), the readiness check on a real Linux server, and the model

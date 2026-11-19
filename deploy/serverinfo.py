@@ -3,6 +3,8 @@
 Read-only helpers shared by deploy.py, preflight.py, new_env.py, n8n/import_to_n8n.py and send_test.py.
 Nothing here changes the server. The parsing functions take text, so they can be checked without a server.
 """
+from __future__ import annotations  # this file also runs on the n8n server, whatever Python 3 it has
+
 import ipaddress
 import json
 import os
@@ -10,12 +12,14 @@ import re
 import shutil
 import socket
 import subprocess
+import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
 
 N8N_PORT = 5678
 GIB = 1024 ** 3
 PROJECT = "udap"  # the `name:` of docker-compose.yml
+METADATA = "http://169.254.169.254/latest"  # the cloud's metadata service (AWS; Huawei Cloud answers the same paths)
 
 
 @dataclass(frozen=True)
@@ -108,6 +112,45 @@ def private_ip() -> str | None:
         return None
     finally:
         probe.close()
+
+
+_public: list[str | None] = []
+
+
+def public_ip() -> str | None:
+    """This server's public IPv4 address, asked from the cloud's metadata service. None when there is no such
+    service (not a cloud server) or the server has no public address. Asked once."""
+    if _public:
+        return _public[0]
+    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))  # the metadata address is never proxied
+
+    def ask(path: str, headers: dict[str, str], method: str = "GET") -> str:
+        request = urllib.request.Request(f"{METADATA}/{path}", headers=headers, method=method)  # noqa: S310
+        with opener.open(request, timeout=2) as answer:
+            return str(answer.read().decode().strip())
+
+    found = None
+    for with_token in (True, False):  # AWS wants a session token first; other clouds answer without one
+        try:
+            headers = {}
+            if with_token:
+                headers = {"X-aws-ec2-metadata-token": ask("api/token", {"X-aws-ec2-metadata-token-ttl-seconds": "60"}, "PUT")}
+            value = ask("meta-data/public-ipv4", headers)
+            ipaddress.IPv4Address(value)
+            found = value
+            break
+        except (OSError, ValueError):
+            continue
+    _public.append(found)
+    return found
+
+
+def is_ip(text: str) -> bool:
+    try:
+        ipaddress.ip_address(text)
+    except ValueError:
+        return False
+    return True
 
 
 def port_open(host: str, port: int, timeout: float = 1.5) -> bool:

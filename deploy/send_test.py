@@ -10,6 +10,7 @@ import json
 import sys
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from datetime import UTC, datetime
 from pathlib import Path
@@ -57,21 +58,29 @@ def main() -> None:
     now = datetime.now(UTC)
     statement = {"channel": "email", "objectKey": f"raw-docs/uc1/{now:%Y/%m}/hsbc-test-{int(time.time())}.pdf",
                  "receivedAt": now.strftime("%Y-%m-%dT%H:%M:%SZ")}
+    api_for_n8n = env.get("PLATFORM_API_URL", "")
+    blocked = (f"n8n cannot reach the Platform API at {api_for_n8n}. If n8n is on another server, open port 8000 of "
+               "this server to the n8n server's address in the cloud firewall (AWS: this server's security group). "
+               "The failed execution in the n8n editor (Executions) shows the error.")
     print(f"1. Sending a bank statement to n8n at {n8n} ...")
+    target = urllib.parse.urlsplit(n8n)
+    if not si.port_open(target.hostname or "", target.port or (443 if target.scheme == "https" else 80), timeout=6):
+        stop(f"This server cannot connect to n8n at {n8n}. Is n8n running? If it is on another server, open its port to "
+             "this server's address in the cloud firewall.")
     try:
         status, answer = call("POST", f"{n8n}/webhook/bank-statement-received", statement, {"X-Webhook-Token": token})
     except OSError as error:
+        if "timed out" in str(error).lower():  # n8n took the request and is still trying to call the API
+            stop(f"n8n took the statement but did not answer within 30 seconds. {blocked}")
         stop(f"n8n cannot be reached at {n8n} ({error}). Is n8n running, and is N8N_WEBHOOK_BASE right?")
     if status == 404:
-        stop("n8n does not know the webhook: the workflow is not published, or n8n is still starting. "
-             "Run:  python3 n8n/import_to_n8n.py")
+        stop("n8n does not know the webhook: the workflows are not published, or n8n is still starting. "
+             "Run:  python3 deploy.py")
     if status == 403:
-        stop("n8n refused the token: its credentials are older than .env. Run:  python3 n8n/make_server_workflows.py  "
-             "and then  python3 n8n/import_to_n8n.py")
+        stop("n8n refused the token: its credentials are older than .env. Run:  python3 deploy.py")
     if status >= 300 or not isinstance(answer, dict) or not answer.get("statementId"):
         stop(f"n8n answered HTTP {status}: {answer}\n  n8n reached the workflow but could not register the statement. "
-             "Usual cause: n8n cannot reach the Platform API at PLATFORM_API_URL. Look at the failed execution in the "
-             "n8n editor (Executions), and at:  docker compose logs --tail 40 api")
+             f"{blocked} Also look at:  docker compose logs --tail 40 api")
     statement_id = answer["statementId"]
     print(f"   accepted, statement {statement_id}")
 

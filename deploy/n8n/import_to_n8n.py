@@ -9,7 +9,12 @@ What it does to n8n: adds 4 credentials and 7 workflows (the copies in n8n/out, 
 make_server_workflows.py), publishes the seven, and restarts the container, which takes about half a minute.
 It never removes or re-creates the container, so n8n's own data is not touched. Running it again replaces the
 same credentials and workflows (same IDs), which is how a changed address or token reaches n8n.
+
+When n8n is on another server, deploy.py prepares a folder with this script, serverinfo.py and the copies;
+copy that folder to the n8n server and run this script there.
 """
+from __future__ import annotations  # this file runs on the n8n server too, whatever Python 3 it has
+
 import argparse
 import json
 import shutil
@@ -22,8 +27,9 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 OUT = HERE / "out"
-sys.path.insert(0, str(HERE.parent))
-import serverinfo as si  # noqa: E402 - needs the path above
+sys.path.insert(0, str(HERE.parent))  # in the repository, serverinfo.py is one folder up
+sys.path.insert(0, str(HERE))         # in the folder deploy.py prepares for another server, it is next to this file
+import serverinfo as si  # noqa: E402 - needs the paths above
 
 INSIDE = "/tmp/udap-import"  # noqa: S108 - a folder inside the n8n container, removed again below
 CLI_TIMEOUT = 300.0
