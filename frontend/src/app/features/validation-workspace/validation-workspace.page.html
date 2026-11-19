@@ -1,0 +1,98 @@
+<div class="amc-page amc-page--wide">
+  @if (loadError(); as p) {
+    <amc-page-header title="Statement review" [crumbs]="crumbs()" />
+    <section class="amc-panel">
+      <amc-empty-state
+        [icon]="p.status === 403 ? 'lock' : 'find_in_page'"
+        [title]="p.status === 403 ? 'You can’t open this statement' : 'Statement not found'"
+        [message]="p.detail"
+      >
+        <a mat-flat-button routerLink="/home">Go to the overview</a>
+      </amc-empty-state>
+    </section>
+  } @else {
+    <amc-page-header title="Statement review" [subtitle]="subtitle()" [crumbs]="crumbs()">
+      @if (store.header(); as h) {
+        <span
+          headerMeta
+          class="amc-status"
+          [class.amc-status--green]="submitted()"
+          [class.amc-status--blue]="!submitted()"
+          ><span class="amc-dot"></span>{{ submitted() ? 'Submitted' : 'In review' }}</span
+        >
+      }
+      <ng-container headerActions>
+        @if (store.header()) {
+          <button mat-stroked-button (click)="exportExcel()">
+            <mat-icon>download</mat-icon>Export
+          </button>
+          @if (!submitted()) {
+            <span [matTooltip]="submitBlocked() || submitHint()">
+              <button mat-flat-button [disabled]="!!submitBlocked()" (click)="submit()">
+                Submit statement
+              </button>
+            </span>
+          }
+        }
+      </ng-container>
+    </amc-page-header>
+
+    @if (!store.header()) {
+      <div class="amc-stack">
+        <div class="amc-panel amc-panel-body"><amc-skeleton [lines]="2" [height]="22" /></div>
+        <div class="amc-panel amc-panel-body"><amc-skeleton [lines]="8" /></div>
+      </div>
+    } @else {
+      <div class="amc-stack">
+        @if (submitted()) {
+          <div
+            class="amc-alert"
+            [class.amc-alert--success]="store.submitted()"
+            [class.amc-alert--info]="!store.submitted()"
+            role="status"
+          >
+            <mat-icon aria-hidden="true">task_alt</mat-icon>
+            <div class="grow">
+              <b>Submitted.</b> Lines are locked; {{ store.header()!.cardId }} is with the Checker.
+            </div>
+            <a class="amc-link-btn" [routerLink]="['/cards', store.header()!.cardId]">Open card</a>
+          </div>
+        } @else if (!store.editable()) {
+          <div class="amc-alert amc-alert--info" role="status">
+            <mat-icon aria-hidden="true">visibility</mat-icon>
+            <div><b>Read only.</b> {{ store.header()!.editable.reason }}</div>
+          </div>
+        }
+
+        <amc-ws-progress />
+
+        @if (store.problem()) {
+          <amc-problem
+            [problem]="store.problem()"
+            [dismissible]="true"
+            (dismissed)="store.dismissProblem()"
+          />
+        }
+
+        <div class="ws-main" [class.ws-main--solo]="!viewerOpen()">
+          <div class="amc-stack ws-left">
+            <amc-ws-line-grid
+              [viewerOpen]="viewerOpen()"
+              (toggleViewer)="viewerOpen.set(!viewerOpen())"
+            />
+            <amc-ws-line-detail />
+            <div class="ws-panels">
+              <amc-ws-references />
+              <amc-ws-gates />
+            </div>
+          </div>
+          @if (viewerOpen()) {
+            <aside class="ws-right" aria-label="Source document">
+              <amc-ws-document />
+            </aside>
+          }
+        </div>
+      </div>
+    }
+  }
+</div>

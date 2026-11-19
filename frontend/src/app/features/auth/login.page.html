@@ -1,0 +1,73 @@
+<amc-auth-frame
+  [heading]="picking() ? 'Choose an account' : 'Sign in'"
+  [lead]="lead()"
+  [note]="picking() ? '' : 'No access yet? Your team lead can request a portal role.'"
+>
+  @if (!picking()) {
+    @if (reason() === 'expired') {
+      <p class="amc-alert amc-alert--info alert" role="status">
+        <mat-icon aria-hidden="true">schedule</mat-icon>
+        <span>Your session has expired. Sign in again to continue.</span>
+      </p>
+    }
+    @if (auth.problem(); as problem) {
+      <div class="amc-alert amc-alert--error alert" role="alert">
+        <mat-icon aria-hidden="true">error_outline</mat-icon>
+        <span>
+          Sign-in did not finish. {{ problem.message }}
+          @if (problem.code) {
+            <span class="code">Error code {{ problem.code }}</span>
+          }
+        </span>
+      </div>
+    }
+
+    @if (auth.mode === 'local') {
+      <button #signIn mat-flat-button class="action" [disabled]="!!busy()" (click)="start()">
+        @if (busy() === 'accounts') {
+          <mat-spinner diameter="18" aria-hidden="true" />Loading accounts…
+        } @else {
+          Sign in
+        }
+      </button>
+    } @else {
+      <button #signIn mat-flat-button class="action sso" [disabled]="!!busy()" (click)="start()">
+        @if (busy() === 'sso') {
+          <mat-spinner diameter="18" aria-hidden="true" />Redirecting to Microsoft…
+        } @else {
+          <img src="assets/microsoft-logo.svg" alt="" width="18" height="18" />Sign in with
+          Microsoft
+        }
+      </button>
+    }
+  } @else {
+    <ul class="accounts" aria-label="Accounts">
+      @for (a of accounts(); track a.id) {
+        <li>
+          <button
+            #account
+            type="button"
+            class="account"
+            [disabled]="!!busy()"
+            [attr.aria-busy]="busy() === a.id"
+            (click)="pick(a.id)"
+          >
+            <amc-avatar [name]="a.name" [size]="36" />
+            <span class="who">
+              <span class="name">{{ a.name }}</span>
+              <span class="meta">{{ a.meta }}</span>
+            </span>
+            @if (busy() === a.id) {
+              <mat-spinner diameter="18" aria-hidden="true" />
+            } @else {
+              <mat-icon class="go" aria-hidden="true">chevron_right</mat-icon>
+            }
+          </button>
+        </li>
+      }
+    </ul>
+    <button mat-button class="back" [disabled]="!!busy()" (click)="showAccounts(false)">
+      <mat-icon>arrow_back</mat-icon>Back
+    </button>
+  }
+</amc-auth-frame>

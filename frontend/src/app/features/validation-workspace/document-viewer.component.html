@@ -1,0 +1,75 @@
+@if (store.header(); as h) {
+  <section class="amc-panel" aria-labelledby="ws-doc-title">
+    <header class="amc-panel-head">
+      <h2 id="ws-doc-title">Source page</h2>
+      <span class="amc-muted amc-small">Preview</span>
+      <span class="amc-spacer"></span>
+      @if (pages().length > 1) {
+        <mat-button-toggle-group
+          [value]="page()"
+          (change)="showPage($event.value)"
+          hideSingleSelectionIndicator
+          aria-label="Page"
+        >
+          @for (p of pages(); track p) {
+            <mat-button-toggle [value]="p">Page {{ p }}</mat-button-toggle>
+          }
+        </mat-button-toggle-group>
+      }
+    </header>
+
+    <div class="amc-panel-body">
+      <div class="paper">
+        <div class="letterhead">
+          <b class="bank">{{ h.bank }}</b>
+          <span>Statement of account</span>
+          <span>{{ h.accountName }}</span>
+          <span>Account {{ h.accountNo }} · {{ h.currency }}</span>
+          <span>Period {{ h.periodFrom }} to {{ h.periodTo }}</span>
+        </div>
+
+        <div class="cols" aria-hidden="true">
+          <span>Date</span><span>Description</span><span class="num">Debit</span
+          ><span class="num">Credit</span><span class="num">Balance</span>
+        </div>
+
+        @if (page() === 1) {
+          <div class="row fixed" [style.top.%]="23.5" aria-hidden="true">
+            <span></span><span>Brought forward</span><span></span><span></span
+            ><span class="num">{{ amount(h.openingBalance) }}</span>
+          </div>
+        }
+
+        @for (l of pageLines(); track l.lineId) {
+          <div
+            class="row"
+            [class.sel]="l.lineNo === store.selectedLineNo()"
+            [style.top.%]="l.box.top"
+            [style.height.%]="l.box.height"
+          >
+            <span class="no" aria-hidden="true">{{ l.lineNo }}</span>
+            @for (f of printed; track f) {
+              <button
+                type="button"
+                [class]="tokenClass(l, f)"
+                [attr.aria-label]="label(l, f)"
+                (click)="pick(l, f)"
+              >
+                {{ text(l, f) }}
+              </button>
+            }
+          </div>
+        }
+
+        @if (lastPage()) {
+          <div class="row fixed closing" [style.top.%]="closingTop()" aria-hidden="true">
+            <span></span><span>Closing balance</span><span></span><span></span
+            ><span class="num">{{ amount(h.closingBalance) }}</span>
+          </div>
+        }
+
+        <div class="foot" aria-hidden="true">Page {{ page() }} of {{ pages().length }}</div>
+      </div>
+    </div>
+  </section>
+}

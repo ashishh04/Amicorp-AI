@@ -1,0 +1,48 @@
+.grow {
+  flex: 1;
+}
+
+// Grid and panels on the left; the source page and the selected line stay in view on the right.
+.ws-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 420px;
+  gap: 16px;
+  align-items: start;
+}
+
+.ws-main--solo {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.ws-left {
+  min-width: 0;
+}
+
+.ws-panels {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+
+// The source page stays in view while the Maker works down the grid.
+.ws-right {
+  position: sticky;
+  top: 16px;
+}
+
+@media (max-width: 1379.98px) {
+  .ws-main {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .ws-right {
+    position: static;
+    max-width: 640px;
+  }
+}
+
+@media (max-width: 900px) {
+  .ws-panels {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

@@ -1,0 +1,137 @@
+<div class="amc-page amc-page--wide">
+  <amc-page-header title="Inbox" [subtitle]="subtitle()">
+    <div headerActions class="amc-row">
+      <button mat-icon-button [matTooltip]="refreshTip()" aria-label="Refresh" (click)="refresh()">
+        <mat-icon>refresh</mat-icon>
+      </button>
+      <button mat-stroked-button [disabled]="!store.items().length" (click)="export()">
+        <mat-icon>download</mat-icon>Export to Excel
+      </button>
+    </div>
+  </amc-page-header>
+
+  <nav
+    mat-tab-nav-bar
+    mat-stretch-tabs="false"
+    fitInkBarToContent
+    class="views"
+    [tabPanel]="panel"
+    aria-label="Inbox views"
+  >
+    @for (v of views(); track v.id) {
+      <a
+        mat-tab-link
+        [routerLink]="[]"
+        [queryParams]="{ view: v.id }"
+        queryParamsHandling="merge"
+        [active]="store.query().view === v.id"
+      >
+        {{ v.label }}
+        @if (count(v.id); as n) {
+          <span
+            class="count"
+            [class.count--alert]="v.id === 'overdue' || v.id === 'escalated'"
+            [attr.aria-label]="n + ' cards'"
+            >{{ n }}</span
+          >
+        }
+      </a>
+    }
+  </nav>
+
+  <mat-tab-nav-panel #panel>
+    <div class="filters" role="search" aria-label="Filter cards">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="search">
+        <mat-icon matPrefix aria-hidden="true">search</mat-icon>
+        <input
+          #box
+          matInput
+          placeholder="Search by card ID, title or subject"
+          aria-label="Search cards by ID, title or subject"
+          [value]="search()"
+          (input)="search.set(box.value)"
+        />
+        @if (search()) {
+          <button matSuffix mat-icon-button aria-label="Clear search" (click)="search.set('')">
+            <mat-icon>close</mat-icon>
+          </button>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="select">
+        <mat-label>Use case</mat-label>
+        <mat-select [value]="store.query().uc" (valueChange)="setUseCase($event)">
+          <mat-option value="">All use cases</mat-option>
+          @for (u of useCases; track u.id) {
+            <mat-option [value]="u.id">{{ u.short }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="select">
+        <mat-label>Card type</mat-label>
+        <mat-select [value]="store.query().type" (valueChange)="setFilter('type', $event)">
+          <mat-option value="">All card types</mat-option>
+          @for (g of typeGroups(); track g.useCase.id) {
+            <mat-optgroup [label]="g.useCase.short">
+              @for (t of g.types; track t.key) {
+                <mat-option [value]="t.key">{{ t.label }}</mat-option>
+              }
+            </mat-optgroup>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="select select--narrow">
+        <mat-label>Priority</mat-label>
+        <mat-select [value]="store.query().severity" (valueChange)="setFilter('severity', $event)">
+          <mat-option value="">Any priority</mat-option>
+          @for (s of severities; track s) {
+            <mat-option [value]="s">{{ s.charAt(0).toUpperCase() + s.slice(1) }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      @if (store.filtered()) {
+        <button mat-button (click)="clearFilters()">Clear filters</button>
+      }
+    </div>
+
+    @if (store.problem(); as problem) {
+      <div class="problem">
+        <amc-problem [problem]="problem" />
+        <button mat-stroked-button (click)="store.load()">Try again</button>
+      </div>
+    }
+
+    @if (store.truncated()) {
+      <p class="amc-alert amc-alert--info truncated" role="status">
+        Showing the first {{ store.items().length }} cards. Narrow the search or filters to see the
+        rest.
+      </p>
+    }
+
+    @if (showGrid()) {
+      <ag-grid-angular
+        class="grid amc-grid-card"
+        [rowData]="store.items()"
+        [columnDefs]="columns"
+        [gridOptions]="gridOptions"
+        [loading]="store.loading()"
+        aria-label="Cards"
+      />
+    } @else if (!store.problem()) {
+      <section class="amc-panel">
+        <amc-empty-state [compact]="true" icon="inbox" [title]="emptyText()">
+          @if (store.filtered()) {
+            <button mat-stroked-button (click)="clearFilters()">Clear filters</button>
+          } @else if (store.query().view === 'mine' && onlyMaker()) {
+            <a mat-stroked-button [routerLink]="[]" [queryParams]="{ view: 'team' }"
+              >Open the team queue</a
+            >
+          }
+        </amc-empty-state>
+      </section>
+    }
+  </mat-tab-nav-panel>
+</div>

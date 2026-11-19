@@ -1,0 +1,106 @@
+<div class="amc-page">
+  <amc-page-header title="Operational KPIs" [subtitle]="subtitle()">
+    @if (store.loadedAt(); as at) {
+      <span headerMeta class="as-of">As of {{ at | amcTime: 'time' }}</span>
+    }
+    <mat-button-toggle-group
+      headerActions
+      class="range"
+      [value]="store.days()"
+      (change)="setRange($event.value)"
+      aria-label="Time range"
+      hideSingleSelectionIndicator
+    >
+      @for (r of ranges; track r) {
+        <mat-button-toggle [value]="r" [attr.aria-label]="'Last ' + r + ' days'"
+          >{{ r }} d</mat-button-toggle
+        >
+      }
+    </mat-button-toggle-group>
+  </amc-page-header>
+
+  @if (store.problem(); as p) {
+    <div class="problem">
+      <amc-problem [problem]="p" />
+      <button mat-stroked-button (click)="retry()"><mat-icon>refresh</mat-icon>Try again</button>
+    </div>
+  }
+
+  @if (store.kpis(); as k) {
+    <div class="body" [class.refreshing]="store.loading()" [attr.aria-busy]="store.loading()">
+      <h2 class="amc-sr-only">Headline figures</h2>
+      <div class="amc-grid amc-cols-4">
+        @for (t of tiles(); track t.label) {
+          <amc-kpi-tile
+            [label]="t.label"
+            [value]="t.value"
+            [caption]="t.caption"
+            [tone]="t.tone"
+            [icon]="t.icon"
+            [trend]="t.trend"
+            [spark]="t.spark"
+            [link]="t.link"
+            [queryParams]="t.queryParams"
+          />
+        }
+      </div>
+
+      <h2 class="amc-sr-only">Charts</h2>
+      <div class="amc-grid amc-cols-2 charts">
+        <amc-kpi-chart class="wide" heading="Cards created and decided" [view]="daily()" />
+        <amc-kpi-chart heading="Open cards by type and state" [view]="open()" />
+        <div class="stack">
+          <amc-kpi-chart heading="Gate outcomes by ruleset" [view]="gates()" />
+          <amc-kpi-chart heading="SLA breaches by team" [view]="breaches()" />
+        </div>
+        <amc-kpi-chart heading="Fields below the confidence threshold" [view]="lowConfidence()" />
+
+        <section class="amc-panel" aria-labelledby="llm-h">
+          <header class="amc-panel-head"><h2 id="llm-h">LLM tokens this month</h2></header>
+          <div class="amc-panel-body">
+            @for (m of llm().meters; track m.label) {
+              <div class="meter">
+                <div class="meter-top">
+                  <span class="meter-label">{{ m.label }}</span>
+                  <span class="meter-value"
+                    ><b>{{ m.used }}</b> of {{ m.budget }} · {{ m.pct }} %</span
+                  >
+                </div>
+                <div
+                  class="meter-track"
+                  role="meter"
+                  aria-valuemin="0"
+                  aria-valuemax="100"
+                  [attr.aria-valuenow]="m.pct"
+                  [attr.aria-label]="m.label + ': ' + m.pct + ' % of the monthly budget'"
+                >
+                  <span
+                    class="meter-fill"
+                    [class.high]="m.pct >= 90"
+                    [style.width.%]="m.pct"
+                  ></span>
+                </div>
+                @if (m.pct >= 90) {
+                  <p class="meter-warn">
+                    <mat-icon aria-hidden="true">warning</mat-icon>Close to the monthly budget
+                  </p>
+                }
+              </div>
+            }
+          </div>
+        </section>
+      </div>
+    </div>
+  } @else if (store.loading()) {
+    <div class="amc-grid amc-cols-4" aria-label="Loading figures">
+      @for (i of [1, 2, 3, 4, 5, 6, 7, 8]; track i) {
+        <div class="amc-panel skeleton"><amc-skeleton [lines]="3" /></div>
+      }
+    </div>
+    <div class="amc-grid amc-cols-2 charts">
+      @for (i of [1, 2]; track i) {
+        <div class="amc-panel skeleton chart-skeleton"><amc-skeleton [lines]="6" /></div>
+      }
+    </div>
+  }
+</div>

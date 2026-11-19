@@ -1,0 +1,148 @@
+# UDAP on one server: PostgreSQL, Redis, the Platform API (with its jobs worker), the portal and a gateway.
+# n8n is not in this file: it stays where you deployed it (deploy/README.md, step 7).
+#
+# This is the demo configuration (ENVIRONMENT=local): the sample officers sign in without a password, and
+# every outside system except the model is a synthetic stand-in. Keep it behind a firewall, synthetic data only.
+#
+#   docker compose up -d --build     start, and update after new code or a changed .env
+#   docker compose ps                status
+#   docker compose logs -f api       follow the API log
+#   docker compose down              stop (data kept);  "down -v" also deletes the database
+name: udap
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "20m"
+    max-file: "5"
+
+x-api-build: &api-build
+  context: ../backend
+  dockerfile: ../deploy/api.Dockerfile
+
+x-api-env: &api-env
+  ENVIRONMENT: local
+  LOG_JSON: "true"
+  DOCS_ENABLED: ${DOCS_ENABLED:-false}
+  DATABASE_URL: postgresql+psycopg://amc:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in deploy/.env (python3 new_env.py)}@postgres:5432/amicorp
+  REDIS_URL: redis://redis:6379/1
+  # n8n sends this as "Authorization: Bearer <token>" and gets the Automation role.
+  AUTOMATION_DEV_TOKEN: ${AUTOMATION_DEV_TOKEN:?Set AUTOMATION_DEV_TOKEN in deploy/.env (python3 new_env.py)}
+  # Synthetic data lake, extractor, 5 Series, CARE, screening, write-back and Teams; the worker runs in the API.
+  INTEGRATIONS: fake
+  EMBEDDED_WORKER: "true"
+  # The extraction callback: the API posts to this n8n, and refuses any other callback address.
+  N8N_WEBHOOK_BASE: ${N8N_WEBHOOK_BASE:?Set N8N_WEBHOOK_BASE in deploy/.env}
+  N8N_EXTRACTION_WEBHOOK_TOKEN: ${N8N_EXTRACTION_WEBHOOK_TOKEN:?Set N8N_EXTRACTION_WEBHOOK_TOKEN in deploy/.env (python3 new_env.py)}
+  # The model: "fake" calls no model; "real" calls ModelArts Studio MaaS with MAAS_API_KEY.
+  MAAS_INTEGRATION: ${MAAS_INTEGRATION:-fake}
+  MAAS_API_KEY: ${MAAS_API_KEY:-}
+  MAAS_BASE_URL: ${MAAS_BASE_URL:-https://api-ap-southeast-1.modelarts-maas.com/openai/v1}
+  MAAS_MODEL: ${MAAS_MODEL:-deepseek-v4-flash}
+  MAAS_THINKING: ${MAAS_THINKING:-disabled}
+
+services:
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: amc
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in deploy/.env (python3 new_env.py)}
+      POSTGRES_DB: amicorp
+      TZ: UTC
+      PGTZ: UTC
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U amc -d amicorp"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    logging: *logging
+
+  redis:
+    image: redis:7
+    restart: unless-stopped
+    # Queue tickets and idempotency locks only: nothing in it needs to survive a restart.
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    logging: *logging
+
+  # Creates or updates the database tables, then exits. The API starts only after it succeeds.
+  migrate:
+    image: udap/platform-api:local
+    build: *api-build
+    command: ["alembic", "upgrade", "head"]
+    environment: *api-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+    logging: *logging
+
+  api:
+    image: udap/platform-api:local
+    build: *api-build
+    restart: unless-stopped
+    environment: *api-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    ports:
+      # For n8n only (people use the gateway). 127.0.0.1 unless .env says otherwise.
+      - "${API_BIND:-127.0.0.1}:${API_PORT:-8000}:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://127.0.0.1:8000/ready', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    logging: *logging
+
+  portal:
+    image: udap/portal-web:local
+    build:
+      context: ../frontend
+    restart: unless-stopped
+    volumes:
+      # Runtime configuration: the real API (no in-browser mock) and the sample-officer sign-in.
+      - ./portal-config.json:/usr/share/nginx/html/assets/config.json:ro
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+    logging: *logging
+
+  # The one address people open: /api/* goes to the API (prefix removed), everything else to the portal.
+  gateway:
+    image: caddy:2
+    restart: unless-stopped
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:?Set SITE_ADDRESS in deploy/.env to the server's DNS name or IP address}
+      ALLOWED_IPS: ${ALLOWED_IPS:-}
+    ports:
+      # IPv4 only: Docker would relay IPv6 visitors from a private address, past the allow-list.
+      - "0.0.0.0:${GATEWAY_HTTP_PORT:-80}:80"
+      - "0.0.0.0:${GATEWAY_HTTPS_PORT:-443}:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - api
+      - portal
+    logging: *logging
+
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:

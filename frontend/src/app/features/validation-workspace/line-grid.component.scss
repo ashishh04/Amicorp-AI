@@ -1,0 +1,81 @@
+// Not encapsulated (AG Grid cells live outside Angular's scoping): keep every rule under the host.
+.amc-ws-grid {
+  display: block;
+
+  .ws-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--amc-border);
+  }
+
+  .ws-count {
+    margin-left: 4px;
+    color: var(--amc-muted);
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .mat-button-toggle-checked .ws-count {
+    color: var(--amc-blue);
+  }
+
+  .ws-bulk {
+    color: var(--amc-muted);
+    font-size: 13px;
+  }
+
+  .ws-ag {
+    display: block;
+    width: 100%;
+  }
+
+  .ws-ag--fixed {
+    height: 560px;
+  }
+
+  .ag-root-wrapper {
+    border: 0;
+    border-radius: 0;
+  }
+
+  // Below the review threshold and not corrected: a corner mark, so colour is not the only cue.
+  .ws-flag {
+    position: relative;
+  }
+  .ws-flag::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    border-top: 9px solid var(--amc-crimson);
+    border-left: 9px solid transparent;
+  }
+
+  .ws-legend {
+    flex-wrap: wrap;
+    gap: 4px 16px;
+    padding-top: 6px;
+    padding-bottom: 6px;
+    font-size: 12px;
+    color: var(--amc-muted);
+
+    > span {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+  }
+
+  .ws-swatch {
+    display: inline-block;
+    position: relative;
+    width: 16px;
+    height: 10px;
+    border: 1px solid var(--amc-border-strong);
+    border-radius: 2px;
+    background: var(--amc-surface);
+  }
+}

@@ -1,0 +1,8 @@
+# Only what api.Dockerfile copies reaches the build: never backend/.env, the virtual environment or the tests.
+*
+!app
+!scripts
+!pyproject.toml
+!alembic.ini
+**/__pycache__
+**/*.pyc

@@ -1,0 +1,137 @@
+// Angular Material theme from the Intertec palette (LLD, Key building blocks: Theme).
+// Navy #1A2332 is the primary surface/text colour, crimson #BE0049 the accent and
+// blue #1F5FA8 the interactive colour. WCAG 2.1 AA contrast is checked by axe in CI.
+@use '@angular/material' as mat;
+@use './tokens';
+
+$amc-navy: tokens.$amc-navy;
+$amc-crimson: tokens.$amc-crimson;
+$amc-blue: tokens.$amc-blue;
+$amc-font: tokens.$amc-font;
+
+@mixin apply {
+  html {
+    color-scheme: light;
+    @include mat.theme(
+      (
+        color: (
+          primary: mat.$azure-palette,
+          tertiary: mat.$magenta-palette,
+        ),
+        typography: (
+          plain-family: $amc-font,
+          brand-family: $amc-font,
+        ),
+        density: -2,
+      )
+    );
+
+    // Pin the brand colours over the generated palette so they match the documents exactly.
+    @include mat.theme-overrides(
+      (
+        primary: $amc-blue,
+        on-primary: #ffffff,
+        primary-container: #eaf1fb,
+        on-primary-container: #10325a,
+        tertiary: $amc-crimson,
+        on-tertiary: #ffffff,
+        error: $amc-crimson,
+        on-surface: $amc-navy,
+        on-surface-variant: #5e6a7a,
+        surface: #ffffff,
+        surface-container-low: #f8f9fb,
+        surface-container: #f4f6f9,
+        surface-container-high: #ffffff,
+        surface-container-highest: #eef1f5,
+        outline: #c9d0d8,
+        outline-variant: #e3e7ec,
+      )
+    );
+
+    // Business UI: squarer controls than Material's default pills.
+    @include mat.button-overrides(
+      (
+        filled-container-shape: 6px,
+        outlined-container-shape: 6px,
+        text-container-shape: 6px,
+        protected-container-shape: 6px,
+        tonal-container-shape: 6px,
+        outlined-outline-color: #c9d1db,
+      )
+    );
+    @include mat.button-toggle-overrides(
+      (
+        shape: 6px,
+        selected-state-background-color: #eaf1fb,
+        selected-state-text-color: $amc-blue,
+      )
+    );
+    // Compact business forms: 40 px fields.
+    @include mat.form-field-overrides(
+      (
+        outlined-container-shape: 6px,
+        container-height: 40px,
+        container-vertical-padding: 8px,
+        container-text-size: 14px,
+        outlined-label-text-size: 14px,
+      )
+    );
+    @include mat.select-overrides(
+      (
+        trigger-text-size: 14px,
+      )
+    );
+    @include mat.dialog-overrides(
+      (
+        container-shape: 14px,
+        subhead-size: 18px,
+        subhead-weight: 600,
+        subhead-line-height: 26px,
+      )
+    );
+    @include mat.menu-overrides(
+      (
+        container-shape: 8px,
+      )
+    );
+    @include mat.tooltip-overrides(
+      (
+        container-color: $amc-navy,
+        supporting-text-color: #ffffff,
+        container-shape: 6px,
+      )
+    );
+    @include mat.snack-bar-overrides(
+      (
+        container-color: $amc-navy,
+        supporting-text-color: #ffffff,
+        container-shape: 8px,
+      )
+    );
+    @include mat.badge-overrides(
+      (
+        background-color: $amc-crimson,
+        text-color: #ffffff,
+      )
+    );
+    @include mat.expansion-overrides(
+      (
+        container-shape: 10px,
+      )
+    );
+    @include mat.paginator-overrides(
+      (
+        container-size: 44px,
+        container-text-size: 13px,
+        form-field-container-height: 32px,
+        form-field-container-vertical-padding: 4px,
+        select-trigger-text-size: 13px,
+      )
+    );
+    @include mat.progress-bar-overrides(
+      (
+        track-shape: 3px,
+      )
+    );
+  }
+}

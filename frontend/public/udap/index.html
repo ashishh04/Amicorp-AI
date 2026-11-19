@@ -1,0 +1,748 @@
+<!doctype html>
+<!--
+  UDAP - Unified Data Automation Platform: the landing page for Amicorp.
+  The portal serves it at /udap/, and signed-out visitors to the portal's own address land here
+  (authGuard). Plain HTML, CSS and JS, no Angular. The portal's CSP applies: no inline <style>,
+  <script> or style="" attributes, so per-element values are classes in udap.css.
+  "Sign in" opens the portal's sign-in page (PORTAL_URL in udap.js).
+  udap-landing/index.html is a self-contained copy to send as a file. After any change here,
+  regenerate it: python -I udap-landing/make_standalone.py
+  Facts come from AMC-SOL-01 (Solution Approach) and the delivery pack.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>UDAP · Unified Data Automation Platform · Amicorp</title>
+    <meta
+      name="description"
+      content="UDAP, Amicorp's Unified Data Automation Platform: one governed view of nine business systems, and every exception decided on a Work Card."
+    />
+    <link rel="icon" href="../favicon.ico" />
+    <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png" />
+    <link rel="stylesheet" href="udap.css" />
+  </head>
+  <body>
+    <!-- ================================================================ navigation -->
+    <header class="nav" id="nav">
+      <div class="container nav-inner">
+        <a class="brand" href="#top" aria-label="UDAP, back to top">
+          <span class="logo" role="img" aria-label="Amicorp"></span>
+          <span class="brand-text"
+            ><strong>UDAP</strong><span>Unified Data Automation Platform</span></span
+          >
+        </a>
+        <nav class="links" id="menu" aria-label="Sections">
+          <a href="#platform">Platform</a>
+          <a href="#how">How it works</a>
+          <a href="#use-cases">Use cases</a>
+          <a href="#data">Data</a>
+          <a href="#security">Security</a>
+          <a href="#roadmap">Roadmap</a>
+        </nav>
+        <a class="btn btn-primary btn-nav" data-portal href="#">Sign in</a>
+        <button class="menu-btn" type="button" aria-label="Open the menu" aria-expanded="false" aria-controls="menu">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <path d="M4 7h16M4 12h16M4 17h16" />
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <main id="top">
+      <!-- ================================================================ hero -->
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="container hero-grid">
+          <div>
+            <span class="eyebrow-pill reveal"
+              ><span class="logo" role="img" aria-label="Amicorp"></span>Amicorp · Intelligent Process
+              Automation and Unified Data Platform</span
+            >
+            <h1 id="hero-title" class="reveal d-80">UDAP</h1>
+            <p class="full-name reveal d-140">Unified Data Automation Platform</p>
+            <p class="lead reveal d-200">
+              One platform for Amicorp's data, rules and decisions. Nine business systems feed one
+              governed view, and every exception becomes a Work Card: rules decide, AI explains the
+              evidence, and a named expert approves.
+            </p>
+            <div class="hero-actions reveal d-260">
+              <a class="btn btn-primary" href="#how"
+                >See how it works
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M5 12h14M13 6l6 6-6 6" />
+                </svg>
+              </a>
+              <a class="btn btn-ghost" href="#use-cases">Explore the six use cases</a>
+            </div>
+            <ul class="trust reveal d-320">
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10" /></svg
+                >Huawei Cloud, Hong Kong
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10" /></svg
+                >Microsoft Entra ID sign-in
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10" /></svg
+                >Every decision audited
+              </li>
+            </ul>
+          </div>
+
+          <!-- Nine systems flow into UDAP; decisions flow out to the portal, dashboards and write-back. -->
+          <svg
+            class="flow reveal d-200"
+            viewBox="0 0 640 470"
+            role="img"
+            aria-label="Nine Amicorp systems flow into UDAP, where rules, AI and Work Cards turn them into the Work Card portal, twenty dashboards and governed write-back."
+          >
+            <defs>
+              <linearGradient id="coreFill" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stop-color="#3b6cf6" />
+                <stop offset="0.55" stop-color="#4a3fc2" />
+                <stop offset="1" stop-color="#7b5cf6" />
+              </linearGradient>
+              <radialGradient id="halo">
+                <stop offset="0" stop-color="#5f8dff" stop-opacity="0.55" />
+                <stop offset="1" stop-color="#5f8dff" stop-opacity="0" />
+              </radialGradient>
+              <radialGradient id="dotIn">
+                <stop offset="0" stop-color="#ffffff" />
+                <stop offset="0.45" stop-color="#7fd4ff" />
+                <stop offset="1" stop-color="#7fd4ff" stop-opacity="0" />
+              </radialGradient>
+              <radialGradient id="dotOut">
+                <stop offset="0" stop-color="#ffffff" />
+                <stop offset="0.45" stop-color="#8cf0cd" />
+                <stop offset="1" stop-color="#8cf0cd" stop-opacity="0" />
+              </radialGradient>
+            </defs>
+
+            <g id="wires"></g>
+            <g id="particles"></g>
+
+            <circle class="glow" cx="330" cy="231" r="128" fill="url(#halo)" />
+            <circle class="ring" cx="330" cy="231" r="118" />
+            <circle class="ring ring-2" cx="330" cy="231" r="100" />
+            <rect x="262" y="163" width="136" height="136" rx="32" fill="url(#coreFill)" />
+            <rect x="262.5" y="163.5" width="135" height="135" rx="31.5" fill="none" stroke="rgba(255,255,255,0.35)" />
+            <text class="core-label" x="330" y="238" text-anchor="middle">UDAP</text>
+            <text class="core-sub" x="330" y="262" text-anchor="middle">DATA · RULES · DECISIONS</text>
+
+            <g class="badge">
+              <rect x="293" y="101" width="74" height="26" rx="13" fill="#2652d6" />
+              <text x="330" y="118.5" text-anchor="middle">Rules</text>
+            </g>
+            <g class="badge">
+              <rect x="210" y="301" width="74" height="26" rx="13" fill="#6a4ce6" />
+              <text x="247" y="318.5" text-anchor="middle">AI</text>
+            </g>
+            <g class="badge">
+              <rect x="366" y="301" width="96" height="26" rx="13" fill="#0e8c69" />
+              <text x="414" y="318.5" text-anchor="middle">Work Cards</text>
+            </g>
+
+            <g id="sources"></g>
+            <g id="outputs"></g>
+          </svg>
+        </div>
+      </section>
+
+      <!-- ================================================================ figures -->
+      <div class="stats container">
+        <div class="stats-grid">
+          <div class="stat">
+            <div class="stat-num" data-count="6">6</div>
+            <div class="stat-label">Use cases</div>
+            <div class="stat-cap">Four in Phase 1, two in Phase 2</div>
+          </div>
+          <div class="stat">
+            <div class="stat-num" data-count="9">9</div>
+            <div class="stat-label">Source systems</div>
+            <div class="stat-cap">In one governed view</div>
+          </div>
+          <div class="stat">
+            <div class="stat-num"><span data-count="24">24</span><small>weeks</small></div>
+            <div class="stat-label">To the full estate</div>
+            <div class="stat-cap">Seven milestones, M0 to M6</div>
+          </div>
+          <div class="stat">
+            <div class="stat-num" data-count="20">20</div>
+            <div class="stat-label">Dashboards</div>
+            <div class="stat-cap">8 in Phase 1, 12 in Phase 2</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================================================================ the challenge -->
+      <section class="block" id="challenge" aria-labelledby="challenge-title">
+        <div class="container">
+          <div class="head reveal">
+            <span class="eyebrow">The challenge</span>
+            <h2 id="challenge-title">Today, the riskiest work is done by hand.</h2>
+            <p>
+              Amicorp is a regulated fiduciary. Two compliance journeys carry most of the manual effort
+              and most of the risk, and underneath both sits a data problem.
+            </p>
+          </div>
+          <div class="grid-3">
+            <article class="card problem reveal">
+              <span class="icon rose"
+                ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="6" width="18" height="13" rx="2.5" /><path d="M3 10h18M7 15h4" /></svg
+              ></span>
+              <h3>Payments checked by hand</h3>
+              <p>
+                Before a payment is cleared, a specialist checks country risk, runs World-Check
+                screening and cross-checks client data between 5 Series and CARE.
+              </p>
+            </article>
+            <article class="card problem reveal d-100">
+              <span class="icon amber"
+                ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M7 3h7l5 5v13H7z" /><path d="M14 3v5h5M10 13h6M10 17h4" /></svg
+              ></span>
+              <h3>Statements reconciled a month late</h3>
+              <p>
+                Bank statements arrive about 30 days after execution, as digital and scanned PDFs in
+                many formats. They are reconciled by hand, and exceptions surface late.
+              </p>
+            </article>
+            <article class="card problem reveal d-200">
+              <span class="icon"
+                ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" /><rect x="3" y="14" width="7" height="7" rx="1.5" /><rect x="14" y="14" width="7" height="7" rx="1.5" /></svg
+              ></span>
+              <h3>Nine systems, no single view</h3>
+              <p>
+                The facts about a client, an entity or a transaction are spread over nine applications,
+                so every team repeats the reconciliation, and AI cannot be applied safely.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================================================================ the platform -->
+      <section class="block soft" id="platform" aria-labelledby="platform-title">
+        <div class="container">
+          <div class="head center reveal">
+            <span class="eyebrow">The platform</span>
+            <h2 id="platform-title">Two capabilities. One platform.</h2>
+            <p>
+              UDAP brings intelligent process automation and a unified data platform together, so the
+              work and the data it depends on are governed in one place.
+            </p>
+          </div>
+          <div class="duo">
+            <article class="cap ipa reveal">
+              <span class="icon"
+                ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="4" y="3" width="16" height="18" rx="2.5" /><path d="M8 8h8M8 12h8M8 16h5" /></svg
+              ></span>
+              <h3>Intelligent Process Automation</h3>
+              <p>
+                Every piece of work becomes a Work Card. Automation detects the work and gathers the
+                evidence, AI summarises it and proposes an action, and a named expert decides.
+              </p>
+              <ul class="ticks">
+                <li>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" /><path d="M8 12.5l2.6 2.5L16 9.5" /></svg
+                  >One Work Card portal for officers, operators, fund accountants and the MLRO
+                </li>
+                <li>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" /><path d="M8 12.5l2.6 2.5L16 9.5" /></svg
+                  >Service levels on business hours, with reminders and escalation
+                </li>
+                <li>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" /><path d="M8 12.5l2.6 2.5L16 9.5" /></svg
+                  >Approved outcomes go back to the core systems through one governed path
+                </li>
+              </ul>
+            </article>
+            <span class="plus" aria-hidden="true">+</span>
+            <article class="cap udp reveal d-120">
+              <span class="icon"
+                ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <ellipse cx="12" cy="6" rx="8" ry="3" /><path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6" /><path d="M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6" /></svg
+              ></span>
+              <h3>Unified Data Platform</h3>
+              <p>
+                All nine applications land in one governed lake on Huawei Cloud Hong Kong, in Bronze,
+                Silver and Gold layers, with a serving layer and twenty dashboards on top.
+              </p>
+              <ul class="ticks">
+                <li>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" /><path d="M8 12.5l2.6 2.5L16 9.5" /></svg
+                  >One trusted view of clients, entities, transactions and risk
+                </li>
+                <li>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" /><path d="M8 12.5l2.6 2.5L16 9.5" /></svg
+                  >Change data capture from 5 Series, CARE and Paxus
+                </li>
+                <li>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" /><path d="M8 12.5l2.6 2.5L16 9.5" /></svg
+                  >Twenty dashboards: eight in Phase 1, twelve in Phase 2
+                </li>
+              </ul>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================================================================ the principle -->
+      <section class="block dark" id="principle" aria-labelledby="principle-title">
+        <div class="container">
+          <div class="head reveal">
+            <span class="eyebrow">The principle</span>
+            <h2 id="principle-title">Rules decide. AI interprets. Humans approve.</h2>
+            <p>
+              Every gate is a versioned rule, every summary is explained, and every final decision has
+              a name next to it.
+            </p>
+          </div>
+          <div class="pillars">
+            <article class="pillar reveal c-blue-light">
+              <span class="icon"
+                ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M9 6h11M9 12h11M9 18h11" /><path d="M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2" /></svg
+              ></span>
+              <span class="num">01</span>
+              <h3>Rules decide</h3>
+              <p>
+                Versioned rulesets evaluate every gate on live data. A change needs a second person to
+                approve it, and its regression cases must pass first.
+              </p>
+            </article>
+            <article class="pillar reveal c-violet-light d-100">
+              <span class="icon"
+                ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M6 3h8l4 4v6" /><path d="M14 3v4h4M6 3v18h6" /><circle cx="16.5" cy="17.5" r="3.5" /><path d="M19 20l2.5 2.5" /></svg
+              ></span>
+              <span class="num">02</span>
+              <h3>AI interprets</h3>
+              <p>
+                The language model reads, summarises and recommends, citing the evidence it used. It
+                never decides, and an error or a doubt fails closed.
+              </p>
+            </article>
+            <article class="pillar reveal c-green-light d-200">
+              <span class="icon"
+                ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="9" cy="8" r="4" /><path d="M2 21c.8-3.6 3.6-6 7-6 1.6 0 3 .5 4.2 1.4" /><path d="M15 19l2 2 5-5" /></svg
+              ></span>
+              <span class="num">03</span>
+              <h3>Humans approve</h3>
+              <p>
+                A named expert makes every final decision, with the evidence and the AI summary in
+                front of them. The person who prepared a card can never approve it.
+              </p>
+            </article>
+          </div>
+          <div class="audit-bar reveal">
+            <span class="icon"
+              ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z" /><path d="M9 12l2 2 4-4" /></svg
+            ></span>
+            <p>
+              <strong>Every step is audited.</strong> The ruleset version, the values read, the model
+              and prompt version, the decision, who made it and why, all kept so any decision can be
+              replayed years later.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================================================================ how it works -->
+      <section class="block" id="how" aria-labelledby="how-title">
+        <div class="container how">
+          <div>
+            <div class="head reveal">
+              <span class="eyebrow">How it works</span>
+              <h2 id="how-title">From exception to decision, on one card.</h2>
+              <p>
+                n8n orchestrates each journey; the platform holds the rules, the card and the audit
+                trail, so every part can be replaced without losing a decision.
+              </p>
+            </div>
+            <ol class="steps reveal">
+              <li class="step">
+                <span class="n" aria-hidden="true"></span>
+                <div>
+                  <h3>Detect</h3>
+                  <p>A scan, an arriving document or a payment request raises the work.</p>
+                </div>
+              </li>
+              <li class="step">
+                <span class="n" aria-hidden="true"></span>
+                <div>
+                  <h3>Check<span class="tag">Rules</span></h3>
+                  <p>Versioned rules evaluate each gate on live data from the systems of record.</p>
+                </div>
+              </li>
+              <li class="step">
+                <span class="n" aria-hidden="true"></span>
+                <div>
+                  <h3>Assemble</h3>
+                  <p>The platform gathers the evidence and opens one Work Card, never two.</p>
+                </div>
+              </li>
+              <li class="step">
+                <span class="n" aria-hidden="true"></span>
+                <div>
+                  <h3>Explain<span class="tag t-violet">AI</span></h3>
+                  <p>AI summarises the evidence and proposes an action, citing its sources.</p>
+                </div>
+              </li>
+              <li class="step">
+                <span class="n" aria-hidden="true"></span>
+                <div>
+                  <h3>Decide<span class="tag t-green">People</span></h3>
+                  <p>
+                    A named expert approves, rejects, returns it to the AI with a note, or delegates it,
+                    within a service level.
+                  </p>
+                </div>
+              </li>
+              <li class="step">
+                <span class="n" aria-hidden="true"></span>
+                <div>
+                  <h3>Write back</h3>
+                  <p>Approved changes return to the core systems through one governed, audited path.</p>
+                </div>
+              </li>
+            </ol>
+          </div>
+
+          <div class="wc-wrap reveal d-150">
+            <div class="wc" role="img" aria-label="A sample Work Card: a compliance decision on a USD 48,000 payment, with gate results and an AI recommendation to approve at 82 % confidence.">
+              <div class="wc-top">
+                <span class="wc-type">Compliance decision</span>
+                <span>WC-24-2101</span>
+                <span class="wc-hold">Payment on hold</span>
+              </div>
+              <h4>USD 48,000 inward TT from ACME Holdings Ltd</h4>
+              <div class="wc-meta">
+                <div><span class="k">Status</span><span class="v"><i class="dot"></i>Awaiting decision</span></div>
+                <div><span class="k">Due</span><span class="v">1 h 12 min left</span></div>
+                <div><span class="k">Owner</span><span class="v">Compliance</span></div>
+              </div>
+              <div class="sla"><span></span></div>
+              <div class="gates">
+                <span class="gate">Gate 1 · <b>monitor</b></span>
+                <span class="gate">Gate 2 · <b>match</b></span>
+                <span class="gate">Gate 3 · <b>clear</b></span>
+              </div>
+              <div class="ai">
+                <div class="ai-head">
+                  <span class="ai-tag">AI recommendation</span>
+                  <span class="ai-conf">Approve · 82 % confidence</span>
+                </div>
+                <p>
+                  The payment matches invoice INV-2209 for consultancy services and fits the client's
+                  profile. Screening found no strong match. Recommend releasing the hold.
+                </p>
+                <div class="cites"><span>E1 Payment</span><span>E2 Invoice INV-2209</span><span>E3 Live screening</span></div>
+              </div>
+              <div class="acts" aria-hidden="true">
+                <span class="primary">Approve</span><span>Reject</span><span>Return to AI</span><span>Delegate</span>
+              </div>
+              <div class="wc-foot">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z" /></svg>
+                Every action is recorded in the audit trail
+              </div>
+            </div>
+            <p class="caption">A sample Work Card from the UDAP portal</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================================================================ use cases -->
+      <section class="block soft" id="use-cases" aria-labelledby="uc-title">
+        <div class="container">
+          <div class="head reveal">
+            <span class="eyebrow">Use cases</span>
+            <h2 id="uc-title">Six use cases on one framework.</h2>
+            <p>
+              Each use case proves something the next one needs. Data validation goes first, because
+              it exercises the whole framework on low-risk data.
+            </p>
+          </div>
+          <div class="uc reveal">
+            <div class="uc-tabs" role="tablist" aria-label="Use cases" aria-orientation="vertical"></div>
+            <div class="uc-panels"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================================================================ data -->
+      <section class="block" id="data" aria-labelledby="data-title">
+        <div class="container">
+          <div class="head reveal">
+            <span class="eyebrow">The data</span>
+            <h2 id="data-title">One governed view of nine systems.</h2>
+            <p>
+              Each source lands once and is refined in three layers, so every team and every dashboard
+              reads the same trusted facts.
+            </p>
+          </div>
+          <div class="lake">
+            <article class="layer reveal l-sources">
+              <span class="k">Sources</span>
+              <h3>Nine systems</h3>
+              <p>Change data capture from the core databases; scheduled extracts from the SaaS tools.</p>
+            </article>
+            <article class="layer reveal l-bronze d-80">
+              <span class="k">Bronze</span>
+              <h3>As delivered</h3>
+              <p>Raw data exactly as each source sent it, kept so everything above can be rebuilt.</p>
+            </article>
+            <article class="layer reveal l-silver d-160">
+              <span class="k">Silver</span>
+              <h3>Cleaned and linked</h3>
+              <p>One client, one entity, one account across 5 Series, CARE, Paxus, Flexcube and the CRM.</p>
+            </article>
+            <article class="layer reveal l-gold d-240">
+              <span class="k">Gold</span>
+              <h3>Business-ready</h3>
+              <p>Governed models for analytics, dashboards and the Phase 2 use cases.</p>
+            </article>
+            <article class="layer reveal l-serving d-320">
+              <span class="k">Serving</span>
+              <h3>Twenty dashboards</h3>
+              <p>One consistent view of clients, entities, transactions and risk.</p>
+            </article>
+          </div>
+          <div class="callout reveal">
+            <span class="icon"
+              ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 12h12M12 6l6 6-6 6" /><path d="M20 4v16" /></svg
+            ></span>
+            <p>
+              <strong>Decisions read live data; the lake is one-way.</strong> Gates read the systems of
+              record at the moment of decision, and approved changes go back only to the systems of
+              record, never into the lake.
+            </p>
+          </div>
+          <div class="systems"></div>
+          <div class="legend">
+            <span><i></i>Relocated to Huawei Cloud Hong Kong</span>
+            <span><i class="saas"></i>SaaS, read over its own API or ODBC</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================================================================ security -->
+      <section class="block soft" id="security" aria-labelledby="security-title">
+        <div class="container">
+          <div class="head reveal">
+            <span class="eyebrow">Security and trust</span>
+            <h2 id="security-title">Built for a regulated fiduciary.</h2>
+            <p>
+              Controls are designed in from the first card, not added at the end, and the API enforces
+              every rule again whatever the screen shows.
+            </p>
+          </div>
+          <div class="grid-4">
+            <article class="card ctrl reveal">
+              <span class="icon"
+                ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="10" r="3" /><path d="M12 21s-7-5.4-7-11a7 7 0 0114 0c0 5.6-7 11-7 11z" /></svg
+              ></span>
+              <h3>Hong Kong residency</h3>
+              <p>Every component runs in Amicorp's Huawei Cloud tenant in Hong Kong, across availability zones.</p>
+            </article>
+            <article class="card ctrl reveal d-60">
+              <span class="icon violet"
+                ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="8" r="4" /><path d="M4 21c1-4 4.2-6 8-6s7 2 8 6" /></svg
+              ></span>
+              <h3>One identity</h3>
+              <p>Microsoft Entra ID signs everyone in, with Amicorp's MFA and conditional access unchanged.</p>
+            </article>
+            <article class="card ctrl reveal d-120">
+              <span class="icon green"
+                ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="7" cy="12" r="3.5" /><circle cx="17" cy="12" r="3.5" /><path d="M10.5 12h3" /></svg
+              ></span>
+              <h3>Four eyes</h3>
+              <p>The person who prepares a card never approves it, and every rule change needs a second approver.</p>
+            </article>
+            <article class="card ctrl reveal d-180">
+              <span class="icon amber"
+                ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="4" y="10" width="16" height="11" rx="2.5" /><path d="M8 10V7a4 4 0 018 0v3" /></svg
+              ></span>
+              <h3>Encrypted throughout</h3>
+              <p>TLS in transit, encryption at rest with keys in Huawei DEW, and secrets only in key management.</p>
+            </article>
+            <article class="card ctrl reveal">
+              <span class="icon rose"
+                ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M10 13a5 5 0 007.5.5l3-3a5 5 0 00-7-7l-1.7 1.7" /><path d="M14 11a5 5 0 00-7.5-.5l-3 3a5 5 0 007 7l1.7-1.7" /></svg
+              ></span>
+              <h3>Tamper-evident audit</h3>
+              <p>An append-only trail where each record carries a hash of the one before, exported daily to locked storage.</p>
+            </article>
+            <article class="card ctrl reveal d-60">
+              <span class="icon"
+                ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="5" y="4" width="14" height="16" rx="2" /><path d="M12 9v4M12 16.5v.5" /></svg
+              ></span>
+              <h3>Fail closed</h3>
+              <p>A gate or a model that cannot decide holds the work for a person. Nothing passes by default.</p>
+            </article>
+            <article class="card ctrl reveal d-120">
+              <span class="icon violet"
+                ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z" /><path d="M9 12l2 2 4-4" /></svg
+              ></span>
+              <h3>Deny by default</h3>
+              <p>Every API route declares exactly one permission, and the API checks every rule on every call.</p>
+            </article>
+            <article class="card ctrl reveal d-180">
+              <span class="icon green"
+                ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M3 12h4l3-7 4 14 3-7h4" /></svg
+              ></span>
+              <h3>Private by default</h3>
+              <p>One way in through the web application firewall; everything else on private networks.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================================================================ roadmap -->
+      <section class="block" id="roadmap" aria-labelledby="roadmap-title">
+        <div class="container">
+          <div class="head reveal">
+            <span class="eyebrow">Roadmap</span>
+            <h2 id="roadmap-title">Twenty-four weeks, seven milestones.</h2>
+            <p>
+              Work Cards first, two tracks, one convergence: automation goes live early on the systems
+              of record, while the data platform is built alongside it.
+            </p>
+          </div>
+          <div class="road reveal">
+            <span class="bar" aria-hidden="true"></span>
+            <article class="card ms c-grey">
+              <div class="m">M0</div>
+              <div class="w">Week 4</div>
+              <h3>Foundations</h3>
+              <p>Landing zone, security design and the extraction proof of concept.</p>
+            </article>
+            <article class="card ms">
+              <div class="m">M1</div>
+              <div class="w">Week 10</div>
+              <h3>Framework live</h3>
+              <p>Work Card portal and data validation live; priority sources in Bronze.</p>
+            </article>
+            <article class="card ms">
+              <div class="m">M2</div>
+              <div class="w">Week 12</div>
+              <h3>Bank statements live</h3>
+              <p>The flagship in production; priority sources cleaned in Silver.</p>
+            </article>
+            <article class="card ms">
+              <div class="m">M3</div>
+              <div class="w">Week 16</div>
+              <h3>Phase 1 complete</h3>
+              <p>Four use cases feature-complete and tested; priority Gold.</p>
+            </article>
+            <article class="card ms">
+              <div class="m">M4</div>
+              <div class="w">Week 19</div>
+              <h3>Phase 1 accepted</h3>
+              <p>User acceptance; nine sources in Bronze; eight dashboards.</p>
+            </article>
+            <article class="card ms c-green-dark">
+              <div class="m">M5</div>
+              <div class="w">Week 21</div>
+              <h3>Convergence</h3>
+              <p>Analytical reads move to Gold; gates stay on the systems of record.</p>
+            </article>
+            <article class="card ms big c-green-dark">
+              <div class="m">M6</div>
+              <div class="w">Week 24</div>
+              <h3>Full estate</h3>
+              <p>Nine sources in Gold, twenty dashboards, all six use cases live.</p>
+            </article>
+          </div>
+          <div class="phase">
+            <span><i class="c-grey"></i>Foundations</span>
+            <span><i class="c-blue"></i>Phase 1: four use cases and the priority data</span>
+            <span><i class="c-green"></i>Convergence and Phase 2: Gold, twenty dashboards, all six use cases</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================================================================ technology -->
+      <section class="block soft" id="technology" aria-labelledby="tech-title">
+        <div class="container">
+          <div class="head center reveal">
+            <span class="eyebrow">Built on</span>
+            <h2 id="tech-title">Proven technology, in Amicorp's own cloud.</h2>
+          </div>
+          <div class="stack">
+            <article class="card tech reveal">
+              <span class="k">Cloud</span>
+              <strong>Huawei Cloud Hong Kong</strong>
+              <small>CCE, RDS for PostgreSQL, OBS, MRS, DWS and DataArts Studio</small>
+            </article>
+            <article class="card tech reveal d-60">
+              <span class="k">AI</span>
+              <strong>ModelArts Studio MaaS</strong>
+              <small>DeepSeek-V4-Flash, with registered prompts and guards on every call</small>
+            </article>
+            <article class="card tech reveal d-120">
+              <span class="k">Orchestration</span>
+              <strong>n8n</strong>
+              <small>Workflows as reviewed JSON in Git, inside Amicorp's network</small>
+            </article>
+            <article class="card tech reveal d-180">
+              <span class="k">Identity</span>
+              <strong>Microsoft Entra ID</strong>
+              <small>Single sign-on with MFA; app roles and groups decide access</small>
+            </article>
+            <article class="card tech reveal d-240">
+              <span class="k">Applications</span>
+              <strong>Angular and FastAPI</strong>
+              <small>The Work Card portal and the Platform API; PaddleOCR for extraction</small>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================================================================ closing -->
+      <section class="cta" aria-labelledby="cta-title">
+        <div class="container reveal">
+          <h2 id="cta-title"><span>Rules decide.</span> <span>AI interprets.</span> <span>Humans approve.</span></h2>
+          <p>
+            UDAP puts Amicorp's data, rules and decisions on one governed platform, with every decision
+            on record.
+          </p>
+          <div class="hero-actions">
+            <a class="btn btn-light" data-portal href="#"
+              >Open the Work Card portal
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+            </a>
+            <a class="btn btn-ghost" href="#top">Back to top</a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="container foot">
+        <a class="brand" href="#top">
+          <span class="logo" role="img" aria-label="Amicorp"></span>
+          <span class="brand-text"><strong>UDAP</strong><span>Unified Data Automation Platform</span></span>
+        </a>
+        <span>Prepared for Amicorp by Intertec Systems · Confidential · <span id="year">2026</span></span>
+      </div>
+    </footer>
+
+    <script src="udap.js"></script>
+  </body>
+</html>

@@ -1,0 +1,125 @@
+.fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  padding: 6px 10px;
+  border: 1px solid var(--amc-border);
+  border-radius: var(--amc-radius);
+  background: var(--amc-surface);
+  color: var(--amc-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover {
+    border-color: var(--amc-border-strong);
+  }
+}
+
+.flabel {
+  color: var(--amc-muted);
+  font-size: 12px;
+}
+
+.value {
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 20px;
+}
+
+.state {
+  color: var(--amc-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.field--red {
+  border-color: var(--amc-danger);
+  background: var(--amc-danger-tint);
+  .state {
+    color: var(--amc-danger);
+  }
+}
+.field--amber {
+  border-color: var(--amc-warning-strong);
+  background: var(--amc-warning-tint);
+  .state {
+    color: var(--amc-warning);
+  }
+}
+.field--corrected {
+  border-left: 3px solid var(--amc-blue);
+  .state {
+    color: var(--amc-blue);
+  }
+}
+.field--focus {
+  outline: 2px solid var(--amc-blue);
+  outline-offset: 1px;
+}
+
+.extra {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+}
+.extra--two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+}
+
+.hints {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.hints-title {
+  color: var(--amc-text-2);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.hint {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px;
+  border: 1px solid var(--amc-border);
+  border-radius: var(--amc-radius);
+  background: var(--amc-surface-2);
+}
+
+.hint-text {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+}
+
+@media (max-width: 900px) {
+  .extra--two {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

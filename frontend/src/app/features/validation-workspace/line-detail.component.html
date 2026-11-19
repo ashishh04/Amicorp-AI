@@ -1,0 +1,111 @@
+@if (line(); as l) {
+  <section class="amc-panel" aria-labelledby="ws-line-title">
+    <header class="amc-panel-head">
+      <h2 id="ws-line-title">Line {{ l.lineNo }}</h2>
+      @if (l.approved) {
+        <span class="amc-status amc-status--green"><span class="amc-dot"></span>Approved</span>
+      } @else {
+        <span class="amc-status"><span class="amc-dot"></span>Not approved</span>
+      }
+      <span class="amc-muted amc-small">Page {{ l.box.page }}</span>
+      <span class="amc-spacer"></span>
+      <span class="amc-small amc-muted">{{ position() }}</span>
+      <button
+        mat-icon-button
+        [disabled]="prevIssue() === null"
+        (click)="go(prevIssue())"
+        aria-label="Previous line to check"
+        matTooltip="Previous line to check"
+      >
+        <mat-icon>keyboard_arrow_up</mat-icon>
+      </button>
+      <button
+        mat-icon-button
+        [disabled]="nextIssue() === null"
+        (click)="go(nextIssue())"
+        aria-label="Next line to check"
+        matTooltip="Next line to check"
+      >
+        <mat-icon>keyboard_arrow_down</mat-icon>
+      </button>
+    </header>
+
+    <div class="amc-panel-body">
+      <ul class="fields" aria-label="Extracted fields">
+        @for (r of rows(); track r.field) {
+          <li>
+            <button
+              type="button"
+              [class]="'field field--' + r.status"
+              [class.field--focus]="r.field === store.selectedField()"
+              (click)="pick(l, r.field)"
+            >
+              <span class="flabel">{{ r.label }}</span>
+              <span class="value">{{ r.value }}</span>
+              <span class="meta">
+                @if (r.confidence !== null) {
+                  <amc-meter [value]="r.confidence" />
+                }
+                <span class="state">{{ stateText[r.status] }}</span>
+              </span>
+            </button>
+          </li>
+        }
+      </ul>
+
+      @if (failures().length || hints().length) {
+        <div class="extra" [class.extra--two]="failures().length && hints().length">
+          @if (failures().length) {
+            <div class="amc-alert amc-alert--error" role="status">
+              <mat-icon aria-hidden="true">error_outline</mat-icon>
+              <ul>
+                @for (f of failures(); track $index) {
+                  <li>
+                    <b>{{ f.checkId }}</b> {{ f.message }}
+                  </li>
+                }
+              </ul>
+            </div>
+          }
+          @if (hints().length) {
+            <div class="hints">
+              <h3 class="hints-title">Suggested fix</h3>
+              @for (s of hints(); track s.field) {
+                <div class="hint">
+                  <div class="hint-text">
+                    <div>
+                      {{ label[s.field] }}: <b>{{ s.display }}</b>
+                    </div>
+                    <div class="amc-small amc-muted">{{ s.reason }}</div>
+                  </div>
+                  <button mat-stroked-button [disabled]="store.busy()" (click)="use(l, s)">
+                    Use
+                  </button>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    @if (store.editable() && !l.approved) {
+      <footer class="amc-panel-foot">
+        <span [matTooltip]="approveReason()">
+          <button
+            mat-flat-button
+            [disabled]="!!approveReason() || store.busy()"
+            (click)="approve(l)"
+          >
+            Approve line {{ l.lineNo }}
+          </button>
+        </span>
+        @if (approveReason()) {
+          <span class="amc-small amc-muted">{{ approveReason() }}</span>
+        }
+      </footer>
+    }
+  </section>
+} @else {
+  <section class="amc-panel amc-panel-body amc-muted">Select a line to see its fields.</section>
+}

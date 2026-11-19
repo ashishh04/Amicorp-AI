@@ -1,0 +1,118 @@
+.as-of {
+  color: var(--amc-muted);
+  font-size: 13px;
+}
+
+.range {
+  background: var(--amc-surface);
+}
+
+.problem {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 16px;
+
+  amc-problem {
+    flex: 1;
+  }
+}
+
+.body {
+  transition: opacity 0.15s ease;
+}
+
+// Refetch keeps the previous figures on screen, dimmed, instead of flashing a skeleton.
+.body.refreshing {
+  opacity: 0.55;
+}
+
+.charts {
+  margin-top: 16px;
+}
+
+// The time series spans the row; the two short charts stack beside the tall one.
+.wide {
+  grid-column: 1 / -1;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+
+  amc-kpi-chart {
+    flex: 1;
+  }
+}
+
+.skeleton {
+  padding: 16px;
+}
+
+.chart-skeleton {
+  min-height: 260px;
+}
+
+.meter + .meter {
+  margin-top: 16px;
+}
+
+.meter-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+  font-size: 13px;
+}
+
+.meter-label {
+  font-weight: 600;
+}
+
+.meter-value {
+  color: var(--amc-text-2);
+}
+
+// Track is a lighter step of the same ramp as the fill.
+.meter-track {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: var(--amc-blue-tint);
+}
+
+.meter-fill {
+  display: block;
+  height: 100%;
+  border-radius: 2px;
+  background: var(--amc-blue);
+}
+
+.meter-fill.high {
+  background: var(--amc-warning-strong);
+}
+
+.meter-warn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 6px 0 0;
+  color: var(--amc-warning);
+  font-size: 12px;
+  font-weight: 600;
+
+  mat-icon {
+    width: 16px;
+    height: 16px;
+    font-size: 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .body {
+    transition: none;
+  }
+}

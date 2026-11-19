@@ -1,0 +1,101 @@
+<a class="skip" href="#main-content" (click)="skipToMain($event)">Skip to main content</a>
+
+<header class="topbar">
+  <button
+    mat-icon-button
+    class="topbar-btn"
+    (click)="toggleNav()"
+    aria-controls="amc-nav"
+    [attr.aria-expanded]="overlay() ? navOpen() : !collapsed()"
+    [attr.aria-label]="
+      overlay() ? 'Open navigation' : collapsed() ? 'Expand navigation' : 'Collapse navigation'
+    "
+  >
+    <mat-icon>menu</mat-icon>
+  </button>
+
+  <a class="brand" routerLink="/home" aria-label="Work Card Portal home">
+    <img src="assets/amicorp-logo.png" alt="" width="28" height="28" />
+    <span class="brand-name">Work Card Portal</span>
+  </a>
+
+  <div class="search">
+    @defer (on idle) {
+      <amc-global-search />
+    } @placeholder {
+      <div class="search-ph"><mat-icon>search</mat-icon>Search cards, subjects or pages</div>
+    }
+  </div>
+
+  <span class="amc-spacer"></span>
+
+  @defer (on idle) {
+    <amc-notifications-menu />
+    <amc-user-menu />
+  } @placeholder {
+    <span class="menus-ph" aria-hidden="true"></span>
+  }
+</header>
+
+<div class="body" [class.rail]="collapsed()" [class.overlay]="overlay()" [class.open]="navOpen()">
+  <nav id="amc-nav" class="nav" aria-label="Main navigation">
+    <div class="nav-scroll">
+      @for (group of groups(); track group.label) {
+        <div class="group" role="group" [attr.aria-label]="group.label">
+          <div class="group-label" aria-hidden="true">{{ group.label }}</div>
+          @for (item of group.items; track item.path) {
+            <a
+              class="item"
+              [routerLink]="item.path"
+              routerLinkActive="active"
+              ariaCurrentWhenActive="page"
+              [matTooltip]="collapsed() ? item.label : ''"
+              matTooltipPosition="right"
+              (click)="onNavigate()"
+            >
+              <mat-icon aria-hidden="true">{{ item.icon }}</mat-icon>
+              <span class="label">{{ item.label }}</span>
+              @if (badge(item); as count) {
+                <span class="badge" [attr.aria-label]="count + ' assigned to you'">{{
+                  count
+                }}</span>
+              }
+            </a>
+          }
+        </div>
+      }
+      @if (user.status() === 'loaded' && !groups().length) {
+        <p class="no-access">Your account has no portal role yet.</p>
+      }
+    </div>
+    @if (!overlay()) {
+      <button
+        class="collapse"
+        (click)="toggleNav()"
+        [attr.aria-label]="collapsed() ? 'Expand navigation' : 'Collapse navigation'"
+      >
+        <mat-icon aria-hidden="true">{{
+          collapsed() ? 'keyboard_double_arrow_right' : 'keyboard_double_arrow_left'
+        }}</mat-icon>
+        <span class="label">Collapse</span>
+      </button>
+    }
+  </nav>
+
+  @if (overlay() && navOpen()) {
+    <div class="scrim" (click)="navOpen.set(false)" aria-hidden="true"></div>
+  }
+
+  <main id="main-content" class="content" tabindex="-1">
+    @if (user.status() === 'error') {
+      <div class="amc-alert amc-alert--error profile-error" role="alert">
+        <mat-icon aria-hidden="true">error_outline</mat-icon>
+        <span
+          >Your profile could not be loaded, so pages that need a role are hidden. Reload the page,
+          or contact the service desk if this continues.</span
+        >
+      </div>
+    }
+    <router-outlet />
+  </main>
+</div>

@@ -1,0 +1,15 @@
+{
+  "name": "Platform stuck-item sweeper",
+  "nodes": [
+    {"parameters": {"rule": {"interval": [{"field": "minutes", "minutesInterval": 15}]}}, "id": "92000000-0000-4000-8000-000000000001", "name": "Every 15 minutes", "type": "n8n-nodes-base.scheduleTrigger", "typeVersion": 1.2, "position": [0, 0]},
+    {"parameters": {"method": "POST", "url": "={{ $vars.PLATFORM_API_URL }}/v1/maintenance/redrive", "authentication": "genericCredentialType", "genericAuthType": "httpHeaderAuth", "sendHeaders": true, "headerParameters": {"parameters": [{"name": "Idempotency-Key", "value": "=redrive:{{ $execution.id }}"}]}, "sendBody": true, "specifyBody": "json", "jsonBody": "={{ JSON.stringify({ olderThanMinutes: Number($vars.REDRIVE_AFTER_MINUTES || 30), maxAttempts: Number($vars.REDRIVE_MAX_ATTEMPTS || 3), scopes: ['uc1.statement', 'uc2.transaction', 'uc3.nav-statement', 'extraction.job'] }) }}", "options": {"timeout": 120000}}, "id": "92000000-0000-4000-8000-000000000002", "name": "Redrive stuck items", "type": "n8n-nodes-base.httpRequest", "typeVersion": 4.2, "position": [240, 0], "retryOnFail": true, "maxTries": 2, "waitBetweenTries": 30000},
+    {"parameters": {"conditions": {"options": {"caseSensitive": true, "leftValue": "", "typeValidation": "loose"}, "conditions": [{"id": "92000000-0000-4000-8000-0000000000c1", "leftValue": "={{ Number($json.escalatedCount || 0) }}", "rightValue": 0, "operator": {"type": "number", "operation": "gt"}}], "combinator": "and"}, "options": {}}, "id": "92000000-0000-4000-8000-000000000003", "name": "Anything escalated?", "type": "n8n-nodes-base.if", "typeVersion": 2, "position": [480, 0]},
+    {"parameters": {"method": "POST", "url": "={{ $vars.PLATFORM_API_URL }}/v1/notifications", "authentication": "genericCredentialType", "genericAuthType": "httpHeaderAuth", "sendHeaders": true, "headerParameters": {"parameters": [{"name": "Idempotency-Key", "value": "=redrive:{{ $execution.id }}:notify"}]}, "sendBody": true, "specifyBody": "json", "jsonBody": "={{ JSON.stringify({ audience: 'role:platform-support', channel: 'teams', event: 'stuck-items-escalated', sweepId: $json.sweepId, escalatedCount: $json.escalatedCount }) }}", "options": {}}, "id": "92000000-0000-4000-8000-000000000004", "name": "Notify platform support", "type": "n8n-nodes-base.httpRequest", "typeVersion": 4.2, "position": [720, -100], "retryOnFail": true, "maxTries": 3, "waitBetweenTries": 5000}
+  ],
+  "connections": {
+    "Every 15 minutes": {"main": [[{"node": "Redrive stuck items", "type": "main", "index": 0}]]},
+    "Redrive stuck items": {"main": [[{"node": "Anything escalated?", "type": "main", "index": 0}]]},
+    "Anything escalated?": {"main": [[{"node": "Notify platform support", "type": "main", "index": 0}], []]}
+  },
+  "settings": {"executionOrder": "v1", "timezone": "Asia/Hong_Kong", "errorWorkflow": "AmiErrHandler001", "saveDataErrorExecution": "all"}
+}

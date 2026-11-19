@@ -1,0 +1,353 @@
+<div class="amc-page">
+  <amc-page-header title="Overview" [subtitle]="today()" />
+
+  @if (store.problem(); as problem) {
+    <amc-problem class="problem" [problem]="problem" />
+  }
+
+  @switch (store.mode()) {
+    @case ('work') {
+      <div class="amc-grid amc-cols-4 tiles">
+        <amc-kpi-tile
+          label="Assigned to me"
+          icon="assignment_ind"
+          [value]="count('mine')"
+          caption="Open cards"
+          link="/inbox"
+          [queryParams]="{ view: 'mine' }"
+        />
+        <amc-kpi-tile
+          label="Due within 4 h"
+          icon="schedule"
+          [value]="count('due-soon')"
+          caption="Your queue"
+          [tone]="toneFor('due-soon', 'warning')"
+          link="/inbox"
+          [queryParams]="{ view: 'due-soon' }"
+        />
+        <amc-kpi-tile
+          label="Overdue"
+          icon="event_busy"
+          [value]="count('overdue')"
+          caption="Past due date"
+          [tone]="toneFor('overdue', 'danger')"
+          link="/inbox"
+          [queryParams]="{ view: 'overdue' }"
+        />
+        <amc-kpi-tile
+          label="Escalated"
+          icon="priority_high"
+          [value]="count('escalated')"
+          caption="Past the SLA"
+          [tone]="toneFor('escalated', 'danger')"
+          link="/inbox"
+          [queryParams]="{ view: 'escalated' }"
+        />
+      </div>
+
+      <div class="amc-main-aside work">
+        <div class="amc-stack">
+          <section class="amc-panel" aria-labelledby="my-title">
+            <header class="amc-panel-head">
+              <h2 id="my-title">{{ myTitle() }}</h2>
+              <span class="amc-spacer"></span>
+              <a mat-button routerLink="/inbox" [queryParams]="{ view: store.myCardsView() }"
+                >View all</a
+              >
+            </header>
+            @if (firstLoad()) {
+              <div class="amc-panel-body"><amc-skeleton [lines]="4" /></div>
+            } @else if (!store.myCards().length) {
+              <p class="empty">No open cards in your queue.</p>
+            } @else {
+              <table class="amc-table fixed">
+                <thead>
+                  <tr>
+                    <th scope="col" class="col-id">Card</th>
+                    <th scope="col">Title</th>
+                    <th scope="col" class="col-type">Type</th>
+                    <th scope="col" class="col-state">State</th>
+                    <th scope="col" class="col-due">Due</th>
+                    <th scope="col" class="col-owner">Owner</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (c of store.myCards(); track c.id) {
+                    <tr>
+                      <td class="col-id">
+                        <a class="id" [routerLink]="['/cards', c.id]">{{ c.id }}</a>
+                      </td>
+                      <td class="col-title" [title]="c.title">{{ c.title }}</td>
+                      <td class="col-type"><amc-card-type [type]="c.type" /></td>
+                      <td><amc-state-chip [state]="c.state" /></td>
+                      <td class="amc-nowrap">
+                        <amc-sla [dueAt]="c.dueAt" [createdAt]="c.createdAt" [state]="c.state" />
+                      </td>
+                      <td class="amc-nowrap">{{ owner(c) }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            }
+          </section>
+
+          <section class="amc-panel" aria-labelledby="recent-title">
+            <header class="amc-panel-head">
+              <h2 id="recent-title">Recently updated</h2>
+            </header>
+            @if (firstLoad()) {
+              <div class="amc-panel-body"><amc-skeleton [lines]="3" /></div>
+            } @else if (!store.recent().length) {
+              <p class="empty">No recent changes.</p>
+            } @else {
+              <table class="amc-table fixed">
+                <thead>
+                  <tr>
+                    <th scope="col" class="col-id">Card</th>
+                    <th scope="col">Title</th>
+                    <th scope="col" class="col-state">State</th>
+                    <th scope="col" class="col-when">Updated</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (c of store.recent(); track c.id) {
+                    <tr>
+                      <td class="col-id">
+                        <a class="id" [routerLink]="['/cards', c.id]">{{ c.id }}</a>
+                      </td>
+                      <td class="col-title" [title]="c.title">{{ c.title }}</td>
+                      <td><amc-state-chip [state]="c.state" /></td>
+                      <td class="col-when" [title]="exact(c.updatedAt)">
+                        {{ c.updatedAt | amcTime: 'relative' }}
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            }
+          </section>
+        </div>
+        <aside aria-label="Queue health">
+          <amc-queue-health [cards]="store.team()" [title]="queueTitle()" />
+        </aside>
+      </div>
+    }
+
+    @case ('admin') {
+      @let kpis = store.kpis();
+      <div class="amc-grid amc-cols-4 tiles">
+        <amc-kpi-tile
+          label="Open cards"
+          icon="inbox"
+          [value]="kpis ? kpis.openCards : '–'"
+          [spark]="kpis?.series?.openCards ?? null"
+          caption="All teams"
+          link="/kpis"
+        />
+        <amc-kpi-tile
+          label="Critical past due"
+          [icon]="kpis && kpis.criticalPastDue > 0 ? 'report' : 'verified'"
+          [value]="kpis ? kpis.criticalPastDue : '–'"
+          caption="Target 0"
+          [tone]="kpis && kpis.criticalPastDue > 0 ? 'danger' : 'default'"
+          link="/kpis"
+        />
+        <amc-kpi-tile
+          label="SLA breaches"
+          icon="timer_off"
+          [value]="kpis ? kpis.slaBreaches : '–'"
+          [spark]="kpis?.series?.slaBreaches ?? null"
+          caption="Last 14 days"
+          [tone]="kpis && kpis.slaBreaches > 0 ? 'warning' : 'default'"
+          link="/kpis"
+        />
+        <amc-kpi-tile
+          label="Write-back success"
+          icon="sync"
+          [value]="kpis ? percent(kpis.writebackSuccessPct) : '–'"
+          [spark]="kpis?.series?.writebackSuccessPct ?? null"
+          caption="Target 99.9 %"
+          [tone]="kpis && kpis.writebackSuccessPct < 99.9 ? 'warning' : 'default'"
+          link="/kpis"
+        />
+      </div>
+
+      <section class="amc-panel" aria-labelledby="drafts-title">
+        <header class="amc-panel-head">
+          <h2 id="drafts-title">Ruleset drafts awaiting approval</h2>
+          <span class="amc-spacer"></span>
+          <a mat-button routerLink="/admin/rulesets">View all</a>
+        </header>
+        @if (firstLoad()) {
+          <div class="amc-panel-body"><amc-skeleton [lines]="3" /></div>
+        } @else if (!store.drafts().length) {
+          <p class="empty">No drafts are waiting for approval.</p>
+        } @else {
+          <table class="amc-table fixed">
+            <thead>
+              <tr>
+                <th scope="col">Ruleset</th>
+                <th scope="col" class="col-version">Version</th>
+                <th scope="col" class="col-person">Drafted by</th>
+                <th scope="col" class="col-when">Drafted</th>
+                <th scope="col" class="col-approver">Approved by</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (d of store.drafts(); track d.key + d.version) {
+                <tr>
+                  <td>
+                    <a class="id" routerLink="/admin/rulesets" [queryParams]="{ key: d.key }">{{
+                      d.name
+                    }}</a>
+                    <div class="amc-muted amc-small amc-mono">{{ d.key }}</div>
+                  </td>
+                  <td class="amc-nowrap">v{{ d.version }}</td>
+                  <td class="amc-nowrap">{{ d.draftedBy.name }}</td>
+                  <td class="amc-nowrap" [title]="exact(d.draftedAt)">
+                    {{ d.draftedAt | amcTime: 'short' }}
+                  </td>
+                  <td>{{ sentence(d.approvers) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      </section>
+    }
+
+    @case ('auditor') {
+      @let stats = store.auditStats();
+      <div class="amc-grid amc-cols-3 tiles">
+        <amc-kpi-tile
+          label="Decisions"
+          icon="gavel"
+          [value]="stats ? stats.decisions24h : '–'"
+          caption="Last 24 hours"
+          link="/audit"
+        />
+        <amc-kpi-tile
+          label="Escalations"
+          icon="priority_high"
+          [value]="stats ? stats.escalations24h : '–'"
+          caption="Last 24 hours"
+          [tone]="stats && stats.escalations24h > 0 ? 'warning' : 'default'"
+          link="/audit"
+        />
+        <amc-kpi-tile
+          label="Write-back failures"
+          icon="sync_problem"
+          [value]="stats ? stats.writebackFailures7d : '–'"
+          caption="Last 7 days"
+          [tone]="stats && stats.writebackFailures7d > 0 ? 'danger' : 'default'"
+          link="/audit"
+        />
+      </div>
+
+      <section class="amc-panel" aria-labelledby="audit-title">
+        <header class="amc-panel-head">
+          <h2 id="audit-title">Latest audit events</h2>
+          <span class="amc-spacer"></span>
+          <a mat-button routerLink="/audit">View all</a>
+        </header>
+        @if (firstLoad()) {
+          <div class="amc-panel-body"><amc-skeleton [lines]="4" /></div>
+        } @else if (!store.audit().length) {
+          <p class="empty">No audit events yet.</p>
+        } @else {
+          <table class="amc-table fixed">
+            <thead>
+              <tr>
+                <th scope="col" class="col-when">Time</th>
+                <th scope="col" class="col-actor">Actor</th>
+                <th scope="col" class="col-action">Action</th>
+                <th scope="col">Entity</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (e of store.audit(); track e.id) {
+                <tr>
+                  <td class="col-when amc-nowrap" [title]="exact(e.at)">
+                    {{ e.at | amcTime: 'short' }}
+                  </td>
+                  <td class="amc-nowrap">
+                    {{ e.actor }} <span class="amc-muted">· {{ e.actorRole }}</span>
+                  </td>
+                  <td>
+                    <code>{{ e.action }}</code>
+                  </td>
+                  <td class="amc-nowrap">
+                    <span class="amc-muted entity">{{ sentence(e.entity) }}</span>
+                    @if (entityLink(e); as link) {
+                      <a class="id" [routerLink]="link">{{ e.entityId }}</a>
+                    } @else {
+                      {{ e.entityId }}
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      </section>
+
+      <section class="amc-panel" aria-labelledby="scope-title">
+        <header class="amc-panel-head">
+          <h2 id="scope-title">Open cards</h2>
+          @if (scopePage.total()) {
+            <span class="amc-panel-sub">{{ scopePage.total() }}</span>
+          }
+        </header>
+        @if (firstLoad()) {
+          <div class="amc-panel-body"><amc-skeleton [lines]="4" /></div>
+        } @else if (!scopePage.total()) {
+          <p class="empty">No open cards.</p>
+        } @else {
+          <table class="amc-table fixed">
+            <thead>
+              <tr>
+                <th scope="col" class="col-id">Card</th>
+                <th scope="col">Title</th>
+                <th scope="col" class="col-type">Type</th>
+                <th scope="col" class="col-state">State</th>
+                <th scope="col" class="col-due">Due</th>
+                <th scope="col" class="col-owner">Owner</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (c of scopePage.rows(); track c.id) {
+                <tr>
+                  <td class="col-id">
+                    <a class="id" [routerLink]="['/cards', c.id]">{{ c.id }}</a>
+                  </td>
+                  <td class="col-title" [title]="c.title">{{ c.title }}</td>
+                  <td class="col-type"><amc-card-type [type]="c.type" /></td>
+                  <td><amc-state-chip [state]="c.state" /></td>
+                  <td class="amc-nowrap">
+                    <amc-sla [dueAt]="c.dueAt" [createdAt]="c.createdAt" [state]="c.state" />
+                  </td>
+                  <td class="amc-nowrap">{{ c.owner.name }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+          <amc-paginator [paged]="scopePage" label="Open card pages" />
+        }
+      </section>
+    }
+
+    @default {
+      @if (user.status() === 'loaded') {
+        <section class="amc-panel">
+          <amc-empty-state
+            icon="lock"
+            title="Your account has no portal role yet"
+            message="Ask your team lead to request a role in Entra ID."
+          />
+        </section>
+      } @else {
+        <amc-skeleton [lines]="4" [height]="20" />
+      }
+    }
+  }
+</div>

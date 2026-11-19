@@ -1,0 +1,186 @@
+<div class="amc-page">
+  @if (store.card(); as c) {
+    <amc-page-header [title]="c.title" [crumbs]="crumbs()">
+      <ng-container headerActions>
+        @if (readOnly()) {
+          <span class="amc-chip amc-chip--outline">Read only</span>
+        }
+        @for (b of buttons(); track b.decision) {
+          <button
+            [matButton]="b.appearance"
+            [class.amc-btn-danger]="b.decision === 'REJECT'"
+            [disabled]="!b.gate.allowed"
+            [disabledInteractive]="true"
+            [matTooltip]="b.gate.allowed ? '' : (b.gate.reason ?? '')"
+            (click)="decide(b.decision, b.gate.allowed)"
+          >
+            {{ b.label }}
+          </button>
+        }
+      </ng-container>
+      <div class="meta">
+        <amc-card-type [type]="c.type" />
+        <span class="meta-text">{{ c.id }} · {{ c.subjectId }}</span>
+      </div>
+    </amc-page-header>
+
+    <section class="amc-panel record" aria-label="Key facts">
+      <div class="field">
+        <span class="amc-label">Status</span>
+        <amc-state-chip [state]="c.state" />
+      </div>
+      <div class="field">
+        <span class="amc-label">Priority</span>
+        <span><amc-severity [severity]="c.severity" /></span>
+      </div>
+      <div class="field">
+        <span class="amc-label">Due</span>
+        <amc-sla [dueAt]="c.dueAt" [createdAt]="c.createdAt" [state]="c.state" />
+      </div>
+      <div class="field">
+        <span class="amc-label">Owner</span>
+        <span class="who"><amc-avatar [name]="c.owner.name" [size]="22" />{{ c.owner.name }}</span>
+      </div>
+      <div class="field">
+        <span class="amc-label">Value</span>
+        <span class="strong">{{ c.value ? (c.value | amcMoney) : '—' }}</span>
+      </div>
+      <div class="field">
+        <span class="amc-label">Team</span>
+        <span>{{ c.team }}</span>
+      </div>
+    </section>
+
+    <div class="banners">
+      @if (hint(); as h) {
+        <div class="amc-alert amc-alert--info">
+          <mat-icon aria-hidden="true">info</mat-icon>
+          <span>{{ h }}</span>
+        </div>
+      }
+      @if (c.hold && open()) {
+        <div class="amc-alert amc-alert--warning">
+          <mat-icon aria-hidden="true">pause_circle</mat-icon>
+          <span><b>On hold.</b> {{ c.hold }}</span>
+        </div>
+      }
+      @switch (c.state) {
+        @case ('ESCALATED') {
+          <div class="amc-alert amc-alert--error">
+            <mat-icon aria-hidden="true">error</mat-icon>
+            <span
+              ><b>Escalated to {{ c.escalationRole }}.</b> The due date has passed.</span
+            >
+          </div>
+        }
+        @case ('WRITEBACK_FAILED') {
+          <div class="amc-alert amc-alert--error">
+            <mat-icon aria-hidden="true">sync_problem</mat-icon>
+            <span><b>Write-back failed.</b> Platform support retries or reverses it.</span>
+          </div>
+        }
+        @case ('ASSEMBLING') {
+          <div class="progress-note" role="status">
+            <span>Assembling evidence</span>
+            <mat-progress-bar mode="indeterminate" aria-label="Assembling evidence" />
+          </div>
+        }
+        @case ('WRITING_BACK') {
+          <div class="progress-note" role="status">
+            <span>Writing back to the system of record</span>
+            <mat-progress-bar mode="indeterminate" aria-label="Writing back" />
+          </div>
+        }
+        @case ('CLOSED') {
+          @if (decided(); as d) {
+            <p class="decided">
+              {{ d.to === 'APPROVED' ? 'Approved' : 'Rejected' }} by {{ d.actor }} ·
+              {{ d.at | amcTime: 'datetime' }}
+              @if (d.note) {
+                · “{{ d.note }}”
+              }
+            </p>
+          }
+        }
+      }
+    </div>
+
+    <div class="amc-main-aside">
+      <div class="main">
+        <nav
+          mat-tab-nav-bar
+          mat-stretch-tabs="false"
+          mat-align-tabs="start"
+          [tabPanel]="panel"
+          class="tabs"
+          aria-label="Card sections"
+        >
+          @for (t of tabs(); track t.id) {
+            <a
+              mat-tab-link
+              [active]="active() === t.id"
+              [routerLink]="[]"
+              [queryParams]="tabParams(t.id)"
+              queryParamsHandling="merge"
+              [replaceUrl]="true"
+              >{{ t.label }}
+              @if (t.count !== null) {
+                <span class="count">{{ t.count }}</span>
+              }
+            </a>
+          }
+        </nav>
+        <mat-tab-nav-panel #panel class="panel">
+          @switch (active()) {
+            @case ('checks') {
+              <amc-card-checks [runs]="c.gateRuns" />
+            }
+            @case ('evidence') {
+              <amc-card-evidence [items]="c.evidence" [highlight]="store.highlight()" />
+            }
+            @case ('history') {
+              <amc-card-history [history]="c.history" />
+            }
+            @case ('assistant') {
+              <amc-card-assistant />
+            }
+            @default {
+              <amc-card-overview [card]="c" (cite)="showEvidence($event)" />
+            }
+          }
+        </mat-tab-nav-panel>
+      </div>
+      <amc-card-aside class="aside" [card]="c" />
+    </div>
+  } @else if (store.error(); as err) {
+    <amc-page-header title="Card {{ id() }}" [crumbs]="crumbs()" />
+    <div class="amc-panel">
+      <amc-empty-state
+        [icon]="err.status === 404 ? 'search_off' : err.status === 403 ? 'lock' : 'cloud_off'"
+        [title]="
+          err.status === 404
+            ? 'Card not found'
+            : err.status === 403
+              ? 'This card is outside your scope'
+              : 'The card could not be loaded'
+        "
+        [message]="err.detail"
+      >
+        @if (err.status !== 404 && err.status !== 403) {
+          <button matButton="outlined" (click)="store.load(id())">Try again</button>
+        }
+        <a matButton="outlined" [routerLink]="readOnly() ? '/home' : '/inbox'">{{
+          readOnly() ? 'Back to the overview' : 'Back to the inbox'
+        }}</a>
+      </amc-empty-state>
+    </div>
+  } @else {
+    <div class="loading" aria-busy="true">
+      <amc-skeleton [lines]="2" [height]="20" />
+      <div class="amc-main-aside">
+        <div class="amc-panel amc-panel-body"><amc-skeleton [lines]="8" /></div>
+        <div class="amc-panel amc-panel-body"><amc-skeleton [lines]="6" /></div>
+      </div>
+    </div>
+  }
+</div>

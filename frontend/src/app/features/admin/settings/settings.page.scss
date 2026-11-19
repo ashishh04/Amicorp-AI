@@ -1,0 +1,82 @@
+.problem {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 16px;
+
+  amc-problem {
+    flex: 1;
+  }
+}
+
+.tab {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 16px;
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+.amc-tag {
+  margin-right: 6px;
+}
+
+.key,
+.group {
+  color: var(--amc-text-2);
+}
+
+// Card types: fixed columns so the table fits its panel; long text wraps.
+.types {
+  table-layout: fixed;
+
+  th,
+  td {
+    box-sizing: border-box;
+  }
+  th:nth-child(1) {
+    width: 22%;
+  }
+  thead th:nth-child(8) {
+    width: 18%;
+  }
+  th:nth-child(2) {
+    width: 7%;
+  }
+  th:nth-child(3),
+  th:nth-child(5) {
+    width: 11%;
+  }
+  th:nth-child(4) {
+    width: 10%;
+  }
+  th:nth-child(6) {
+    width: 12%;
+  }
+  th:nth-child(7) {
+    width: 8%;
+  }
+}
+
+.hint {
+  margin: 0;
+}
+
+.env {
+  max-width: 760px;
+
+  .amc-dl {
+    grid-template-columns: minmax(150px, max-content) 1fr;
+    gap: 10px 24px;
+  }
+
+  dd {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+}

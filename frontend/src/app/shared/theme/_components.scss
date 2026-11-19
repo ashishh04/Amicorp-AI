@@ -1,0 +1,530 @@
+// Global building blocks used by every feature: page layout, panels, status, tags, alerts,
+// tables, pagination, skeletons and AG Grid cell styles. Flat surfaces with borders, compact
+// spacing and restrained colour: colour marks state, not decoration. Component stylesheets only
+// add layout on top of these.
+
+@mixin apply {
+  // ------------------------------------------------------------------ page layout
+  .amc-page {
+    box-sizing: border-box;
+    padding: 20px var(--amc-page-pad) 32px;
+  }
+  .amc-page--wide {
+    max-width: none;
+  }
+  .amc-grid {
+    display: grid;
+    gap: 16px;
+  }
+  .amc-cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .amc-cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .amc-cols-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .amc-main-aside {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 340px;
+    gap: 16px;
+    align-items: start;
+  }
+  @media (max-width: 1200px) {
+    .amc-cols-4 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .amc-cols-3,
+    .amc-main-aside {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+  @media (max-width: 760px) {
+    .amc-cols-2,
+    .amc-cols-4 {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  // ------------------------------------------------------------------ panels
+  .amc-panel {
+    overflow: hidden;
+    background: var(--amc-surface);
+    border: 1px solid var(--amc-border);
+    border-radius: var(--amc-radius);
+    box-shadow: var(--amc-shadow-1);
+  }
+  .amc-panel-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-sizing: border-box;
+    min-height: 48px;
+    padding: 10px 18px;
+    border-bottom: 1px solid var(--amc-border);
+
+    h2,
+    h3 {
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .amc-panel-sub {
+      color: var(--amc-muted);
+      font-size: 12px;
+    }
+  }
+  .amc-panel-body {
+    padding: 16px 18px;
+  }
+  .amc-panel-body--flush {
+    padding: 0;
+  }
+  .amc-panel-foot {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    border-top: 1px solid var(--amc-border);
+    background: var(--amc-surface-2);
+  }
+
+  // ------------------------------------------------------------------ status, tags and chips
+  // Work Card state: a coloured dot and the state name (amc-state-chip renders this).
+  .amc-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--amc-text-2);
+    font-size: 13px;
+    white-space: nowrap;
+
+    .amc-dot {
+      flex: none;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--amc-faint);
+    }
+  }
+  .amc-status--blue .amc-dot {
+    background: var(--amc-blue);
+  }
+  .amc-status--green .amc-dot {
+    background: var(--amc-success);
+  }
+  .amc-status--amber .amc-dot {
+    background: var(--amc-warning-strong);
+  }
+  .amc-status--red .amc-dot {
+    background: var(--amc-danger);
+  }
+  .amc-status--purple .amc-dot {
+    background: var(--amc-progress);
+  }
+
+  // Small labels: severity, outcome, version state. Square corners, used sparingly.
+  .amc-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    box-sizing: border-box;
+    height: 20px;
+    padding: 0 6px;
+    border: 1px solid transparent;
+    border-radius: var(--amc-radius-sm);
+    background: var(--amc-neutral-tint);
+    color: var(--amc-text-2);
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1;
+    white-space: nowrap;
+
+    .amc-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+    .mat-icon {
+      width: 14px;
+      height: 14px;
+      font-size: 14px;
+    }
+  }
+  .amc-chip--blue {
+    background: var(--amc-blue-tint);
+    color: var(--amc-blue);
+  }
+  .amc-chip--green {
+    background: var(--amc-success-tint);
+    color: var(--amc-success);
+  }
+  .amc-chip--amber {
+    background: var(--amc-warning-tint);
+    color: var(--amc-warning);
+  }
+  .amc-chip--red {
+    background: var(--amc-danger-tint);
+    color: var(--amc-danger);
+  }
+  .amc-chip--purple {
+    background: var(--amc-progress-tint);
+    color: var(--amc-progress);
+  }
+  .amc-chip--solid-red {
+    background: var(--amc-crimson);
+    color: #fff;
+  }
+  .amc-chip--outline {
+    border-color: var(--amc-border-strong);
+    background: var(--amc-surface);
+  }
+
+  .amc-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    box-sizing: border-box;
+    height: 18px;
+    padding: 0 5px;
+    border: 1px solid var(--amc-border);
+    border-radius: var(--amc-radius-sm);
+    background: var(--amc-surface-2);
+    color: var(--amc-text-2);
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .amc-kbd {
+    padding: 1px 5px;
+    border: 1px solid var(--amc-border-strong);
+    border-radius: var(--amc-radius-sm);
+    background: var(--amc-surface);
+    color: var(--amc-muted);
+    font-family: var(--amc-mono);
+    font-size: 11px;
+  }
+
+  // Tinted rounded square holding an icon: KPI tiles, empty states, summary metrics.
+  .amc-icon-badge {
+    display: inline-grid;
+    flex: none;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: var(--amc-blue-tint);
+    color: var(--amc-blue);
+
+    .mat-icon {
+      width: 20px;
+      height: 20px;
+      font-size: 20px;
+    }
+  }
+  .amc-icon-badge--danger {
+    background: var(--amc-danger-tint);
+    color: var(--amc-danger);
+  }
+  .amc-icon-badge--warning {
+    background: var(--amc-warning-tint);
+    color: var(--amc-warning);
+  }
+  .amc-icon-badge--success {
+    background: var(--amc-success-tint);
+    color: var(--amc-success);
+  }
+  .amc-icon-badge--neutral {
+    background: var(--amc-neutral-tint);
+    color: var(--amc-text-2);
+  }
+
+  // ------------------------------------------------------------------ alerts
+  .amc-alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin: 0;
+    padding: 10px 14px;
+    border: 1px solid;
+    border-left-width: 4px;
+    border-radius: 8px;
+    font-size: 13px;
+
+    > .mat-icon {
+      flex: none;
+      width: 18px;
+      height: 18px;
+      font-size: 18px;
+    }
+    ul {
+      margin: 4px 0 0;
+      padding-left: 18px;
+    }
+    p:last-child {
+      margin-bottom: 0;
+    }
+  }
+  .amc-alert--info {
+    border-color: #c8daf1;
+    border-left-color: var(--amc-blue);
+    background: #f3f7fc;
+    color: #10325a;
+  }
+  .amc-alert--success {
+    border-color: #c4e2d0;
+    border-left-color: var(--amc-success);
+    background: #f2f9f5;
+    color: #145232;
+  }
+  .amc-alert--warning {
+    border-color: #efdcae;
+    border-left-color: var(--amc-warning-strong);
+    background: #fdf8ec;
+    color: #6b4600;
+  }
+  .amc-alert--error {
+    border-color: #f1c6d4;
+    border-left-color: var(--amc-danger);
+    background: #fdf3f6;
+    color: #8a0035;
+  }
+
+  // ------------------------------------------------------------------ lists and tables
+  .amc-dl {
+    display: grid;
+    grid-template-columns: minmax(110px, max-content) 1fr;
+    gap: 6px 16px;
+    margin: 0;
+    font-size: 13px;
+
+    dt {
+      color: var(--amc-muted);
+    }
+    dd {
+      margin: 0;
+      min-width: 0;
+    }
+  }
+
+  table.amc-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+
+    th,
+    td {
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--amc-border);
+      text-align: left;
+      vertical-align: middle;
+    }
+    th {
+      background: var(--amc-surface-2);
+      color: var(--amc-text-2);
+      font-size: 12px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    tbody th[scope='row'] {
+      background: none;
+      color: var(--amc-text);
+      font-size: 13px;
+      font-weight: 600;
+    }
+    tbody tr:last-child td,
+    tbody tr:last-child th {
+      border-bottom: 0;
+    }
+    tr.amc-row-link {
+      cursor: pointer;
+    }
+    tr.amc-row-link:hover td,
+    tr.amc-row-link:hover th {
+      background: #f5f8fc;
+    }
+    .amc-num {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+  }
+
+  .amc-link-btn {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--amc-blue);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  // ------------------------------------------------------------------ pagination
+  // amc-paginator (shared/ui/paginator.ts) and AG Grid's paging panel share one look.
+  .amc-paginator {
+    display: block;
+    border-top: 1px solid var(--amc-border);
+
+    .mat-mdc-paginator {
+      background: transparent;
+      color: var(--amc-text-2);
+      font-size: 13px;
+    }
+    .mat-mdc-paginator-container {
+      min-height: 44px;
+      padding: 0 8px;
+    }
+  }
+
+  // ------------------------------------------------------------------ loading
+  .amc-skel {
+    border-radius: var(--amc-radius-sm);
+    background: linear-gradient(90deg, #eceff3 25%, #f6f8fa 37%, #eceff3 63%);
+    background-size: 400% 100%;
+    animation: amc-skel 1.4s ease infinite;
+  }
+  @keyframes amc-skel {
+    0% {
+      background-position: 100% 50%;
+    }
+    100% {
+      background-position: 0 50%;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .amc-skel {
+      animation: none;
+    }
+  }
+
+  // ------------------------------------------------------------------ AG Grid cells
+  .amc-cell-2l {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    height: 100%;
+    min-width: 0;
+    line-height: 1.3;
+
+    .amc-cell-main {
+      overflow: hidden;
+      font-weight: 600;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .amc-cell-sub {
+      overflow: hidden;
+      color: var(--amc-muted);
+      font-size: 12px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+  .amc-cell-center {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 100%;
+  }
+  .amc-sev-bar-critical {
+    box-shadow: inset 3px 0 0 var(--amc-crimson);
+  }
+  .amc-sev-bar-high {
+    box-shadow: inset 3px 0 0 #e0607f;
+  }
+  .amc-sev-bar-medium {
+    box-shadow: inset 3px 0 0 var(--amc-warning-strong);
+  }
+  .amc-sev-bar-low {
+    box-shadow: inset 3px 0 0 var(--amc-border-strong);
+  }
+
+  // A grid that stands on the page (not inside a panel) gets the card shadow.
+  .amc-grid-card .ag-root-wrapper {
+    box-shadow: var(--amc-shadow-1);
+  }
+
+  // Confidence bands for extracted fields (shared/grid/ag-grid.setup.ts: confidenceClass).
+  .amc-conf-green {
+    background-color: #f1f8f4;
+  }
+  .amc-conf-amber {
+    background-color: #fdf3dc;
+  }
+  .amc-conf-red {
+    background-color: #fbe3ea;
+  }
+  .amc-corrected {
+    box-shadow: inset 3px 0 0 var(--amc-blue);
+    font-weight: 600;
+  }
+  .amc-cell-fail {
+    outline: 2px solid var(--amc-crimson);
+    outline-offset: -2px;
+  }
+  .amc-grid-btn {
+    height: 24px;
+    padding: 0 10px;
+    border: 1px solid var(--amc-border-strong);
+    border-radius: var(--amc-radius-sm);
+    background: var(--amc-surface);
+    color: var(--amc-blue);
+    font: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+
+    &:hover:not(:disabled) {
+      border-color: var(--amc-blue);
+      background: var(--amc-blue-tint);
+    }
+    &:disabled {
+      color: var(--amc-faint);
+      cursor: default;
+    }
+  }
+
+  // ------------------------------------------------------------------ overlay panels (shell)
+  .mat-mdc-menu-panel.amc-notif-menu {
+    width: 380px;
+    max-width: calc(100vw - 32px);
+  }
+  .mat-mdc-menu-panel.amc-user-menu {
+    max-width: 340px;
+  }
+  .mat-mdc-menu-panel.amc-persona-menu {
+    max-width: 420px;
+    max-height: 70vh;
+  }
+  .amc-search-panel .mat-mdc-option .mdc-list-item__primary-text {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    justify-content: space-between;
+    min-width: 0;
+  }
+
+  // ------------------------------------------------------------------ Material polish
+  .mat-mdc-tab .mdc-tab__text-label {
+    font-weight: 600;
+  }
+  .mat-mdc-snack-bar-container .mat-mdc-button.mat-mdc-snack-bar-action {
+    color: #9cc3f0;
+  }
+  .amc-dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+  .amc-btn-danger.mat-mdc-button-base:not(:disabled) {
+    --mat-button-filled-container-color: var(--amc-crimson);
+    --mat-button-outlined-label-text-color: var(--amc-crimson);
+    --mat-button-text-label-text-color: var(--amc-crimson);
+  }
+}

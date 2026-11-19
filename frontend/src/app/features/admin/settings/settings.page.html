@@ -1,0 +1,179 @@
+<div class="amc-page">
+  <amc-page-header title="Settings" subtitle="Changes go through change control" />
+
+  @if (store.problem(); as p) {
+    <div class="problem">
+      <amc-problem [problem]="p" />
+      <button mat-stroked-button (click)="store.load()">
+        <mat-icon>refresh</mat-icon>Try again
+      </button>
+    </div>
+  }
+
+  <mat-tab-group
+    [selectedIndex]="tabIndex()"
+    (selectedIndexChange)="selectTab($event)"
+    mat-stretch-tabs="false"
+    mat-align-tabs="start"
+    animationDuration="0ms"
+  >
+    <mat-tab label="Card types">
+      <div class="tab">
+        <section class="amc-panel" aria-label="Card types">
+          @if (store.loading() && !store.cardTypes().length) {
+            <div class="amc-panel-body"><amc-skeleton [lines]="6" /></div>
+          } @else {
+            <div class="table-wrap">
+              <table class="amc-table types">
+                <thead>
+                  <tr>
+                    <th scope="col">Card type</th>
+                    <th scope="col">Version</th>
+                    <th scope="col">Owning team</th>
+                    <th scope="col">Default severity</th>
+                    <th scope="col">SLA</th>
+                    <th scope="col">Escalates to</th>
+                    <th scope="col">Decided by</th>
+                    <th scope="col">On approval</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (t of cardTypes.rows(); track t.type) {
+                    <tr>
+                      <th scope="row">
+                        <span [matTooltip]="useCaseName(t.type)">{{ typeLabel(t.type) }}</span>
+                      </th>
+                      <td>v{{ t.version }}</td>
+                      <td>{{ t.team }}</td>
+                      <td>
+                        @if (isSeverity(t.severity)) {
+                          <amc-severity [severity]="t.severity" />
+                        } @else {
+                          By policy
+                        }
+                      </td>
+                      <td>{{ t.sla === 'by policy' ? 'By policy' : t.sla }}</td>
+                      <td>{{ t.escalationRole }}</td>
+                      <td>{{ t.decidedBy }}</td>
+                      <td>{{ t.onApproval }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+            <amc-paginator [paged]="cardTypes" label="Card type pages" />
+          }
+        </section>
+      </div>
+    </mat-tab>
+
+    <mat-tab label="Data scope">
+      <div class="tab">
+        <section class="amc-panel" aria-label="Data scope">
+          @if (store.loading() && !store.dataScope().length) {
+            <div class="amc-panel-body"><amc-skeleton [lines]="6" /></div>
+          } @else {
+            <div class="table-wrap">
+              <table class="amc-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Entra group</th>
+                    <th scope="col">Team</th>
+                    <th scope="col">App role</th>
+                    <th scope="col">Calendar</th>
+                    <th scope="col">Data scope</th>
+                    <th scope="col" class="amc-num">Members</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (g of scope.rows(); track g.group) {
+                    <tr>
+                      <th scope="row">
+                        <code class="group">{{ g.group }}</code>
+                      </th>
+                      <td>{{ g.team }}</td>
+                      <td>{{ g.role }}</td>
+                      <td>
+                        <span [matTooltip]="calendarHint(g.calendar)">{{ g.calendar }}</span>
+                      </td>
+                      <td>{{ g.scope }}</td>
+                      <td class="amc-num">{{ g.members }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+            <amc-paginator [paged]="scope" label="Data scope pages" />
+          }
+        </section>
+        <p class="amc-muted amc-small hint">Group membership is managed in Entra ID.</p>
+      </div>
+    </mat-tab>
+
+    <mat-tab label="Environment">
+      <div class="tab">
+        <section class="amc-panel env" aria-label="Environment">
+          <div class="amc-panel-body">
+            <dl class="amc-dl">
+              <dt>Environment</dt>
+              <dd>{{ env.name }}</dd>
+
+              <dt>Platform API</dt>
+              <dd>
+                <code>{{ env.apiBaseUrl }}</code>
+              </dd>
+
+              <dt>Sign-in</dt>
+              <dd>
+                @if (env.signIn) {
+                  <span class="amc-status amc-status--green"
+                    ><span class="amc-dot"></span>Entra ID</span
+                  >
+                  <span class="amc-muted"
+                    >tenant <code>{{ env.tenantId }}</code></span
+                  >
+                } @else {
+                  <span class="amc-status amc-status--amber"
+                    ><span class="amc-dot"></span>Off (local review only)</span
+                  >
+                }
+              </dd>
+
+              <dt>Demo data</dt>
+              <dd>
+                <span class="amc-status" [class.amc-status--amber]="env.mockApi"
+                  ><span class="amc-dot"></span>{{ env.mockApi ? 'On' : 'Off' }}</span
+                >
+              </dd>
+
+              <dt>Live updates</dt>
+              <dd>
+                <span
+                  class="amc-status"
+                  [class.amc-status--green]="events.connected()"
+                  [class.amc-status--amber]="!events.connected()"
+                  ><span class="amc-dot"></span
+                  >{{ events.connected() ? 'Connected' : 'Not connected' }}</span
+                >
+              </dd>
+
+              <dt>AG Grid licence</dt>
+              <dd>
+                <span
+                  class="amc-status"
+                  [class.amc-status--green]="env.gridLicence"
+                  [class.amc-status--amber]="!env.gridLicence"
+                  ><span class="amc-dot"></span
+                  >{{ env.gridLicence ? 'Present' : 'Not set (watermark)' }}</span
+                >
+              </dd>
+
+              <dt>Times shown in</dt>
+              <dd>{{ zone() }}</dd>
+            </dl>
+          </div>
+        </section>
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+</div>

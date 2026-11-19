@@ -1,0 +1,145 @@
+// Document-level styles: type scale, links, focus, scrollbars and small utilities.
+
+@mixin apply {
+  html,
+  body {
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    background: var(--amc-bg);
+    color: var(--amc-text);
+    font-family: var(--amc-font);
+    font-size: 14px;
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    margin: 0;
+    color: var(--amc-text);
+    font-weight: 600;
+    line-height: 1.25;
+  }
+  h1 {
+    font-size: 20px;
+  }
+  h2 {
+    font-size: 15px;
+  }
+  h3 {
+    font-size: 14px;
+  }
+  p {
+    margin: 0 0 8px;
+  }
+
+  a {
+    color: var(--amc-blue);
+  }
+  a:hover {
+    color: var(--amc-blue-hover);
+  }
+
+  code,
+  pre,
+  .amc-mono {
+    font-family: var(--amc-mono);
+    font-size: 12px;
+  }
+
+  // Visible focus for keyboard users everywhere (WCAG 2.4.7).
+  :focus-visible {
+    outline: 2px solid var(--amc-blue);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: #cfe0f5;
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #c9d1db transparent;
+  }
+
+  // Self-hosted icon font (the CSP allows no third-party font hosts).
+  .material-icons {
+    font-family: 'Material Icons';
+    font-weight: normal;
+    font-style: normal;
+    font-size: 24px;
+    line-height: 1;
+    letter-spacing: normal;
+    text-transform: none;
+    display: inline-block;
+    white-space: nowrap;
+    word-wrap: normal;
+    direction: ltr;
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: 'liga';
+  }
+
+  // Utilities
+  .amc-muted {
+    color: var(--amc-muted);
+  }
+  .amc-small {
+    font-size: 12px;
+  }
+  .amc-label {
+    color: var(--amc-muted);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .amc-spacer {
+    flex: 1 1 auto;
+  }
+  .amc-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .amc-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .amc-nowrap {
+    white-space: nowrap;
+  }
+  .amc-truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .amc-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+  .amc-icon-sm {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+  .amc-text-success {
+    color: var(--amc-success);
+  }
+  .amc-text-danger {
+    color: var(--amc-danger);
+  }
+  .amc-text-warning {
+    color: var(--amc-warning);
+  }
+}

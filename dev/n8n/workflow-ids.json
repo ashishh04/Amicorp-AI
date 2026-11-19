@@ -1,0 +1,12 @@
+{
+  "about": "The IDs these workflows already have in your local n8n, so a re-import updates them in place instead of creating duplicates. If your n8n uses other IDs, check them with `n8n list:workflow`. The Platform error handler always uses AmiErrHandler001, because every other workflow points to it.",
+  "workflows": {
+    "UC1 Bank statement processing": "vPwRzUT00rVmHcz6",
+    "UC2 Transaction monitoring (AML)": "DtzF1bAiEVG1FokV",
+    "UC3 NAV statement validation": "1F66HcgBhqJULu2Z",
+    "UC4 Discrepancy detection": "fyQwsorpSYUZmJsU",
+    "UC5 Violation-triggered cards": "wspq7Ik3sHsuiTwC",
+    "Platform stuck-item sweeper": "rwIQ665J6hDgTXYq",
+    "Platform error handler": "AmiErrHandler001"
+  }
+}

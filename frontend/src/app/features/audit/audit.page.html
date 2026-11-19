@@ -1,0 +1,78 @@
+<div class="amc-page amc-page--wide">
+  <amc-page-header
+    title="Audit trail"
+    [subtitle]="amlOnly() ? 'Showing AML events only' : undefined"
+  >
+    <button
+      headerActions
+      mat-stroked-button
+      (click)="exportCsv()"
+      [disabled]="!store.items().length"
+    >
+      <mat-icon>download</mat-icon>Export CSV
+    </button>
+  </amc-page-header>
+
+  <section class="amc-panel" aria-label="Audit events">
+    <div class="toolbar" role="search" aria-label="Filter audit events">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="search">
+        <mat-label>Search</mat-label>
+        <mat-icon matPrefix aria-hidden="true">search</mat-icon>
+        <input
+          matInput
+          [value]="search()"
+          (input)="search.set($any($event.target).value)"
+          placeholder="Action, ID or detail"
+        />
+      </mat-form-field>
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Entity</mat-label>
+        <mat-select [value]="store.entity()" (valueChange)="setEntity($event)">
+          <mat-option value="">All entities</mat-option>
+          @for (e of entities; track e.value) {
+            <mat-option [value]="e.value">{{ e.label }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Actor</mat-label>
+        <input matInput [value]="actor()" (input)="actor.set($any($event.target).value)" />
+      </mat-form-field>
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Time range</mat-label>
+        <mat-select [value]="store.range()" (valueChange)="setRange($event)">
+          @for (r of ranges; track r.value) {
+            <mat-option [value]="r.value">{{ r.label }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      @if (store.filtered()) {
+        <button mat-button (click)="clear()">Clear filters</button>
+      }
+    </div>
+
+    @if (store.truncated()) {
+      <p class="truncated amc-muted" role="status">
+        Showing the first {{ store.items().length }} events. Narrow the filters to see the rest.
+      </p>
+    }
+
+    @if (store.problem(); as p) {
+      <div class="problem"><amc-problem [problem]="p" /></div>
+    }
+
+    @if (empty()) {
+      <amc-empty-state icon="manage_search" title="No events match these filters" [compact]="true">
+        <button mat-button (click)="clear()">Clear filters</button>
+      </amc-empty-state>
+    } @else {
+      <ag-grid-angular
+        class="grid"
+        [rowData]="store.items()"
+        [columnDefs]="columns"
+        [gridOptions]="gridOptions"
+        [loading]="store.loading() && !store.loaded()"
+      />
+    }
+  </section>
+</div>

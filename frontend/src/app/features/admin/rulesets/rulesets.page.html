@@ -1,0 +1,177 @@
+<div class="amc-page amc-page--wide">
+  <amc-page-header title="Rulesets" [subtitle]="countLabel()">
+    <button
+      headerMeta
+      mat-icon-button
+      class="help"
+      aria-label="About rulesets"
+      matTooltip="Rules are evaluated top to bottom; the first match decides. Approved versions cannot change: an Admin drafts a new version and a different person approves it."
+    >
+      <mat-icon>help_outline</mat-icon>
+    </button>
+    <button headerActions mat-stroked-button (click)="store.load()" [disabled]="store.loading()">
+      <mat-icon>refresh</mat-icon>Refresh
+    </button>
+  </amc-page-header>
+
+  <amc-problem [problem]="store.loadProblem()" />
+
+  <div class="layout">
+    <amc-ruleset-list (choose)="choose($event)" />
+
+    <section class="amc-panel detail" [attr.aria-busy]="store.loading()">
+      @if (store.selected(); as rs) {
+        <header class="head">
+          <div class="title-row">
+            <h2>{{ rs.name }}</h2>
+            @if (store.current(); as cur) {
+              <span class="amc-chip amc-chip--green">v{{ cur.version }} in use</span>
+            } @else {
+              <span class="amc-chip amc-chip--amber">No approved version</span>
+            }
+            <span class="amc-spacer"></span>
+            @if (isAdmin() && !store.draft() && !editing()) {
+              <button mat-stroked-button (click)="startDraft('new')">
+                <mat-icon>add</mat-icon>New draft
+              </button>
+            }
+          </div>
+          <div class="meta">
+            <span>{{ useCaseName(rs) }}</span>
+            <span class="sep" aria-hidden="true">·</span>
+            <span>Owner: {{ rs.owner }}</span>
+            <span class="sep" aria-hidden="true">·</span>
+            <span class="outcomes"
+              >Outcomes:
+              @for (o of rs.outcomes; track o) {
+                <span [class]="'amc-chip amc-chip--' + tone(o)">{{ o }}</span>
+              }
+            </span>
+          </div>
+          <p class="desc">{{ rs.description }}</p>
+        </header>
+
+        @if (store.draft(); as d) {
+          @if (!editing()) {
+            <div class="amc-alert amc-alert--warning draft" role="status">
+              <span class="draft-text">
+                <b>Draft v{{ d.version }}</b> by {{ d.draftedBy.name }},
+                {{ d.draftedAt | amcTime: 'relative' }} · awaiting {{ rs.approvers }}
+                <mat-icon
+                  class="note-icon"
+                  tabindex="0"
+                  aria-label="Change note"
+                  [matTooltip]="'Change note: ' + d.note"
+                  >notes</mat-icon
+                >
+              </span>
+              <span class="draft-actions">
+                @if (store.version()?.version !== d.version) {
+                  <button mat-button (click)="go({ version: d.version, tab: 'rules' })">
+                    View changes
+                  </button>
+                }
+                @if (isAdmin()) {
+                  <button mat-stroked-button (click)="startDraft('edit')">Edit draft</button>
+                  <button mat-stroked-button class="amc-btn-danger" (click)="discard()">
+                    Discard
+                  </button>
+                } @else {
+                  <button
+                    mat-flat-button
+                    disabledInteractive
+                    [disabled]="!d.actions.approve.allowed"
+                    [matTooltip]="d.actions.approve.allowed ? '' : (d.actions.approve.reason ?? '')"
+                    (click)="d.actions.approve.allowed && openApprove()"
+                  >
+                    Review and approve
+                  </button>
+                }
+              </span>
+            </div>
+          }
+        }
+
+        @if (editing()) {
+          <amc-draft-editor
+            [approver]="approver(rs)"
+            (saved)="onSaved($event)"
+            (closed)="go({ tab: 'rules' })"
+          />
+        } @else {
+          <div class="tab-row">
+            <nav
+              mat-tab-nav-bar
+              mat-stretch-tabs="false"
+              mat-align-tabs="start"
+              [tabPanel]="panel"
+              class="tabs"
+              aria-label="Ruleset views"
+            >
+              @for (t of tabs; track t.id) {
+                <a
+                  mat-tab-link
+                  [routerLink]="[]"
+                  [queryParams]="{ tab: t.id }"
+                  queryParamsHandling="merge"
+                  [replaceUrl]="true"
+                  [active]="store.tab() === t.id"
+                  >{{ t.label }}
+                  @if (count(t.id, rs); as n) {
+                    <span class="count">{{ n }}</span>
+                  }
+                </a>
+              }
+            </nav>
+          </div>
+          @if (store.tab() !== 'versions') {
+            <div class="tab-tools">
+              <mat-form-field appearance="outline" class="version" subscriptSizing="dynamic">
+                <mat-label>Version</mat-label>
+                <mat-select
+                  [value]="store.version()?.version"
+                  (valueChange)="go({ version: $event })"
+                >
+                  @for (v of rs.versions; track v.version) {
+                    <mat-option [value]="v.version"
+                      >v{{ v.version }} · {{ v.status | amcLabel
+                      }}{{ v.status === 'approved' ? ' (in use)' : '' }}</mat-option
+                    >
+                  }
+                </mat-select>
+              </mat-form-field>
+              @if (store.tab() === 'rules') {
+                <mat-slide-toggle
+                  class="json"
+                  [checked]="store.showJson()"
+                  (change)="store.toggleJson()"
+                  >Show JSON</mat-slide-toggle
+                >
+              }
+            </div>
+          }
+          <mat-tab-nav-panel #panel class="tab-panel">
+            @switch (store.tab()) {
+              @case ('try') {
+                <amc-ruleset-try />
+              }
+              @case ('regression') {
+                <amc-ruleset-regression />
+              }
+              @case ('versions') {
+                <amc-ruleset-versions (view)="go({ version: $event, tab: 'rules' })" />
+              }
+              @default {
+                <amc-rules-table />
+              }
+            }
+          </mat-tab-nav-panel>
+        }
+      } @else if (!store.loaded()) {
+        <div class="amc-panel-body"><amc-skeleton [lines]="10" /></div>
+      } @else {
+        <amc-empty-state icon="rule" title="No rulesets available for your roles." />
+      }
+    </section>
+  </div>
+</div>

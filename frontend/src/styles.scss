@@ -1,0 +1,9 @@
+@use './app/shared/theme/tokens';
+@use './app/shared/theme/theme';
+@use './app/shared/theme/base';
+@use './app/shared/theme/components';
+
+@include tokens.define;
+@include theme.apply;
+@include base.apply;
+@include components.apply;

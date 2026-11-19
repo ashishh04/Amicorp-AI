@@ -1,0 +1,43 @@
+# The gateway: one address for the portal and its API (the portal's CSP allows calls to its own origin only).
+#
+# The portal starts only on a secure page: HTTPS, or http://localhost. On plain http://<IP> the browser
+# withholds the crypto functions its sign-in library needs, and the portal says it "could not start".
+#
+# SITE_ADDRESS  a DNS name (udap.example.com): HTTPS with a public certificate, fetched automatically;
+#               or the server's IP address: HTTPS with a certificate the gateway signs itself
+#               (the browser warns once; choose Advanced, then Proceed).
+# ALLOWED_IPS   public addresses or ranges that may connect, separated by spaces.
+#               Private networks (10.x, 172.16-31.x, 192.168.x) may always connect.
+{
+	# A browser sends no server name when the address is an IP; this picks the certificate for it.
+	default_sni {$SITE_ADDRESS}
+}
+
+(udap) {
+	@outside not remote_ip private_ranges {$ALLOWED_IPS}
+
+	route {
+		respond @outside "This address ({remote_host}) is not on the server's allow-list. Add it to ALLOWED_IPS in deploy/.env, then run: docker compose up -d" 403
+
+		# The Platform API. The portal calls /api/v1/...; the API itself serves /v1/...
+		# Server-sent events (/api/v1/events/stream) are passed on as they arrive.
+		handle_path /api/* {
+			reverse_proxy api:8000
+		}
+
+		# The portal and the UDAP landing page (static files from nginx, which sets the security headers).
+		encode zstd gzip
+		reverse_proxy portal:8080
+	}
+}
+
+# What people open: https://<SITE_ADDRESS>. Plain HTTP to this address is redirected to HTTPS.
+{$SITE_ADDRESS} {
+	import udap
+}
+
+# For an SSH tunnel from your own PC (README, step 6): http://localhost:<port> is a secure page without
+# any certificate. The allow-list applies here too, so a forged "Host: localhost" gains nothing.
+http://localhost {
+	import udap
+}

@@ -1,0 +1,4 @@
+# Server secrets, the generated n8n copies (tokens in plain text) and the upload bundle. Never commit.
+.env
+n8n/out/
+*.tar.gz

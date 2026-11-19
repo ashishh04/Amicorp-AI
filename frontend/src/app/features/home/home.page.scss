@@ -1,0 +1,101 @@
+.problem {
+  display: block;
+  margin-bottom: 16px;
+}
+.tiles {
+  margin-bottom: 16px;
+}
+.amc-panel + .amc-panel {
+  margin-top: 16px;
+}
+
+.empty {
+  margin: 0;
+  padding: 14px 16px;
+  color: var(--amc-muted);
+  font-size: 13px;
+}
+
+.entity {
+  margin-right: 4px;
+}
+.id {
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+// Fixed layout: set columns keep their width, the untitled one (title, entity) takes the rest
+// and every cell stays on one line.
+.fixed {
+  table-layout: fixed;
+
+  td {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+.col-id {
+  width: 120px;
+}
+.col-type {
+  width: 220px;
+}
+.col-state {
+  width: 170px;
+}
+.col-due,
+.col-when {
+  width: 150px;
+}
+.col-owner {
+  width: 140px;
+}
+.col-version {
+  width: 90px;
+}
+.col-person {
+  width: 170px;
+}
+.col-approver {
+  width: 300px;
+}
+.col-actor {
+  width: 240px;
+}
+.col-action {
+  width: 220px;
+}
+
+// Work view: the tables share the width with the queue panel, so the type column goes (the
+// inbox and the card show it) and the rest narrow.
+.work {
+  .amc-panel + .amc-panel {
+    margin-top: 0;
+  }
+  .fixed th,
+  .fixed td {
+    box-sizing: border-box;
+  }
+  .col-type {
+    display: none;
+  }
+  .col-id {
+    width: 112px;
+  }
+  .col-state {
+    width: 150px;
+  }
+  .col-due,
+  .col-when {
+    width: 124px;
+  }
+  .col-owner {
+    width: 100px;
+  }
+}

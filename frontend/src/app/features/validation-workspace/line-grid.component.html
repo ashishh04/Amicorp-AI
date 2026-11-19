@@ -1,0 +1,64 @@
+<section class="amc-panel" aria-label="Statement lines">
+  <div class="ws-toolbar">
+    <mat-button-toggle-group
+      [value]="store.filter()"
+      (change)="store.setFilter($event.value)"
+      hideSingleSelectionIndicator
+      aria-label="Show lines"
+    >
+      @for (f of filters; track f.value) {
+        <mat-button-toggle [value]="f.value">
+          {{ f.label }} <span class="ws-count">{{ count(f.value) }}</span>
+        </mat-button-toggle>
+      }
+    </mat-button-toggle-group>
+
+    <span class="amc-spacer"></span>
+
+    @if (store.bulk(); as b) {
+      <span class="ws-bulk" role="status">Approving {{ b.done }} of {{ b.total }}…</span>
+    }
+    @if (store.editable()) {
+      <span [matTooltip]="cleanHint()">
+        <button
+          mat-stroked-button
+          [disabled]="!store.cleanLines().length || store.busy()"
+          (click)="store.approveClean()"
+        >
+          Approve clean lines ({{ store.cleanLines().length }})
+        </button>
+      </span>
+    }
+    <button mat-button (click)="toggleViewer.emit()" [attr.aria-pressed]="viewerOpen()">
+      {{ viewerOpen() ? 'Hide source page' : 'Show source page' }}
+    </button>
+    <button mat-icon-button [matTooltip]="help()" [attr.aria-label]="help()">
+      <mat-icon>help_outline</mat-icon>
+    </button>
+  </div>
+
+  @if (store.bulk(); as b) {
+    <mat-progress-bar
+      mode="determinate"
+      [value]="(b.done / b.total) * 100"
+      aria-label="Approving clean lines"
+    />
+  }
+
+  <ag-grid-angular
+    class="ws-ag"
+    [class.ws-ag--fixed]="!autoHeight()"
+    [rowData]="store.lines()"
+    [columnDefs]="columns"
+    [gridOptions]="gridOptions"
+    [domLayout]="autoHeight() ? 'autoHeight' : 'normal'"
+  />
+
+  <div class="amc-panel-foot ws-legend" aria-label="Legend">
+    <span><i class="ws-swatch amc-conf-green"></i>≥ 90 %</span>
+    <span><i class="ws-swatch amc-conf-amber"></i>{{ thresholdPct() }}–90 %</span>
+    <span><i class="ws-swatch amc-conf-red ws-flag"></i>Below {{ thresholdPct() }} %</span>
+    <span><i class="ws-swatch amc-corrected"></i>Corrected</span>
+    <span><i class="ws-swatch amc-cell-fail"></i>Fails a gate</span>
+  </div>
+</section>

@@ -1,0 +1,61 @@
+// Design tokens for portal-web. Brand colours come from the Intertec palette (LLD, Key building
+// blocks: Theme): navy #1A2332, crimson #BE0049, blue #1F5FA8. Every text/background pair below
+// meets WCAG 2.1 AA (4.5:1) for body text; axe checks it in CI.
+
+$amc-navy: #1a2332;
+$amc-crimson: #be0049;
+$amc-blue: #1f5fa8;
+$amc-font: 'Carlito', 'Calibri', 'Segoe UI', sans-serif;
+
+@mixin define {
+  :root {
+    // Brand
+    --amc-navy: #{$amc-navy};
+    --amc-navy-2: #26324a;
+    --amc-on-navy: #ffffff;
+    --amc-blue: #{$amc-blue};
+    --amc-blue-hover: #194e8a;
+    --amc-blue-tint: #eaf1fb;
+    --amc-crimson: #{$amc-crimson};
+    --amc-crimson-tint: #fce8ef;
+
+    // Status colours: strong is for text and icons, tint is the matching background
+    --amc-success: #1e7b45;
+    --amc-success-tint: #e7f3ec;
+    --amc-warning: #8a5a00;
+    --amc-warning-strong: #c27c0e;
+    --amc-warning-tint: #fdf3dc;
+    --amc-danger: #be0049;
+    --amc-danger-tint: #fbe9ef;
+    --amc-progress: #5b3fa0;
+    --amc-progress-tint: #efeafb;
+    --amc-neutral-tint: #eef0f3;
+
+    // Surfaces and text
+    --amc-bg: #f3f5f8;
+    --amc-surface: #ffffff;
+    --amc-surface-2: #f7f8fa;
+    --amc-border: #e3e7ec;
+    --amc-border-strong: #c9d0d8;
+    --amc-text: #{$amc-navy};
+    --amc-text-2: #3d4757;
+    --amc-muted: #5e6a7a;
+    --amc-faint: #8a94a3;
+
+    // Shape and depth (Fluent-style): rounded cards that sit on the page with a soft shadow
+    --amc-radius-sm: 6px;
+    --amc-radius: 10px;
+    --amc-radius-lg: 14px;
+    --amc-shadow-1: 0 1px 2px rgba(16, 24, 40, 0.05), 0 1px 4px rgba(16, 24, 40, 0.06);
+    --amc-shadow-hover: 0 2px 4px rgba(16, 24, 40, 0.06), 0 6px 16px rgba(16, 24, 40, 0.1);
+    --amc-shadow-2: 0 8px 24px rgba(16, 24, 40, 0.16);
+    --amc-topbar-h: 48px;
+    --amc-sidenav-w: 232px;
+    --amc-sidenav-rail: 56px;
+    --amc-page-pad: 24px;
+
+    // Type
+    --amc-font: #{$amc-font};
+    --amc-mono: 'Cascadia Mono', Consolas, 'Courier New', monospace;
+  }
+}

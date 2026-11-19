@@ -1,0 +1,22 @@
+# Secrets and generated files. Never commit these.
+.env
+dev/n8n/out/
+deploy/n8n/out/
+*.tar.gz
+
+# This laptop only
+/.idea/
+/.vscode/
+/.backup-n8n-original/
+/.playwright-mcp/
+/.tmp-*/
+
+# Python and Node working folders
+__pycache__/
+*.pyc
+.venv/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+*.egg-info/
+node_modules/

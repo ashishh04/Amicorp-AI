@@ -1,0 +1,2 @@
+# Generated workflow copies and local secrets (tokens in plain text). Never commit.
+out/
